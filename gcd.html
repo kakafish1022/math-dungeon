@@ -54,6 +54,12 @@
       </div>
       <div id="joinStatus" class="text-xs text-center text-rose-400 font-medium hidden"></div>
     </div>
+
+    <!-- 返回起始畫面 (回到 index.html) -->
+    <a href="./index.html" class="w-full py-2.5 bg-slate-800/80 hover:bg-slate-700 active:scale-95 border border-slate-700 rounded-xl font-bold text-xs text-slate-300 text-center transition-all flex items-center justify-center gap-1.5 mt-1">
+      <span>🏠</span>
+      <span>返回遊戲大廳 (選擇其他模式)</span>
+    </a>
   </main>
 
   <!-- 戰鬥畫面 (預設隱藏) -->
@@ -193,7 +199,7 @@
   </footer>
 
   <script>
-    // 破除 BFCache 快取：偵測若是從快取載入，強制整頁刷新
+    // 破除 BFCache 快取
     window.addEventListener('pageshow', function(event) {
       if (event.persisted) {
         window.location.reload();
