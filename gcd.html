@@ -128,7 +128,7 @@
 
   </main>
 
-  <!-- 結算彈窗 -->
+  <!-- 結算彈窗 (支援雙向確認再來一局) -->
   <div id="resultModal" class="fixed inset-0 bg-slate-950/90 backdrop-blur-md flex items-center justify-center p-4 hidden z-50">
     <div class="max-w-xs w-full bg-slate-800 border-2 border-slate-700 rounded-3xl p-5 text-center flex flex-col items-center shadow-2xl">
       <div id="resultIcon" class="text-5xl mb-2">🏆</div>
@@ -143,9 +143,18 @@
         <div>最後互質商數: <span id="summaryRemain" class="text-slate-300 font-bold"></span></div>
       </div>
 
-      <button onclick="location.reload()" class="w-full py-3 bg-indigo-600 hover:bg-indigo-500 rounded-xl font-bold text-sm active:scale-95 transition-all">
-        再來一局
-      </button>
+      <!-- 再戰提示狀態 -->
+      <div id="rematchStatus" class="text-xs text-amber-300 font-medium mb-3 min-h-[1.25rem]"></div>
+
+      <!-- 按鈕群 -->
+      <div class="flex gap-2 w-full">
+        <button id="btnRematch" onclick="requestRematch()" class="flex-1 py-3 bg-indigo-600 hover:bg-indigo-500 rounded-xl font-bold text-sm active:scale-95 transition-all">
+          再來一局
+        </button>
+        <button onclick="location.reload()" class="px-4 py-3 bg-slate-700 hover:bg-slate-600 rounded-xl font-bold text-sm text-slate-300 active:scale-95 transition-all">
+          回大廳
+        </button>
+      </div>
     </div>
   </div>
 
@@ -168,6 +177,10 @@
     let myFactors = [];
     let isStunned = false;
     let gameOver = false;
+
+    // 再戰控制標記
+    let rematchRequestedByMe = false;
+    let rematchRequestedByPeer = false;
 
     // 工具：求兩數最大公因數 (歐幾里得輾轉相除法)
     function calcGcd(a, b) {
@@ -197,7 +210,7 @@
       peer.on('connection', (c) => {
         conn = c;
         setupConnection();
-        // 房主負責決定隨機題目並分發
+        // 房主決定題目並分發
         const q = QUESTION_POOL[Math.floor(Math.random() * QUESTION_POOL.length)];
         setTimeout(() => {
           startGame(q[0], q[1]);
@@ -248,6 +261,11 @@
           document.getElementById('enemyNums').innerText = `[ ${data.a}, ${data.b} ]`;
         } else if (data.type === 'WIN') {
           triggerGameOver(false, data.finalGcd, data.lastA, data.lastB);
+        } else if (data.type === 'REMATCH_REQUEST') {
+          handleRematchRequest();
+        } else if (data.type === 'REMATCH_START') {
+          document.getElementById('resultModal').classList.add('hidden');
+          startGame(data.q[0], data.q[1]);
         }
       });
     }
@@ -259,6 +277,18 @@
       myFactors = [];
       isStunned = false;
       gameOver = false;
+
+      // 重設再戰狀態與按鈕
+      rematchRequestedByMe = false;
+      rematchRequestedByPeer = false;
+      const btn = document.getElementById('btnRematch');
+      const statusEl = document.getElementById('rematchStatus');
+      if (btn) {
+        btn.disabled = false;
+        btn.classList.remove('opacity-50', 'cursor-not-allowed', 'ring-2', 'ring-amber-400', 'animate-pulse');
+      }
+      if (statusEl) statusEl.innerText = '';
+
       updateUI();
     }
 
@@ -301,7 +331,7 @@
         }
         triggerGameOver(true, totalGcd, myA, myB);
       } else {
-        // 誤判：兩數還可以再被整除，給予 4 秒嚴厲懲罰！
+        // 誤判：兩數還可以再被整除，給予 4 秒懲罰！
         triggerStun(4);
       }
     }
@@ -353,6 +383,52 @@
       }
 
       modal.classList.remove('hidden');
+    }
+
+    // 點擊「再來一局」
+    function requestRematch() {
+      const btn = document.getElementById('btnRematch');
+      const statusEl = document.getElementById('rematchStatus');
+
+      rematchRequestedByMe = true;
+      btn.disabled = true;
+      btn.classList.add('opacity-50', 'cursor-not-allowed');
+
+      if (rematchRequestedByPeer) {
+        // 對方已先邀請，直接重開
+        statusEl.innerText = "雙方同意，立即開局！";
+        startNewRematchGame();
+      } else {
+        // 送出再戰請求
+        statusEl.innerText = "已送出邀請，等待對手同意...";
+        if (conn && conn.open) {
+          conn.send({ type: 'REMATCH_REQUEST' });
+        }
+      }
+    }
+
+    // 收到對手的再戰請求
+    function handleRematchRequest() {
+      rematchRequestedByPeer = true;
+      const statusEl = document.getElementById('rematchStatus');
+      const btn = document.getElementById('btnRematch');
+
+      if (rematchRequestedByMe) {
+        startNewRematchGame();
+      } else {
+        statusEl.innerText = "🔥 對手邀請再來一局！";
+        btn.classList.add('ring-2', 'ring-amber-400', 'animate-pulse');
+      }
+    }
+
+    // 重新分發題目開局
+    function startNewRematchGame() {
+      const q = QUESTION_POOL[Math.floor(Math.random() * QUESTION_POOL.length)];
+      if (conn && conn.open) {
+        conn.send({ type: 'REMATCH_START', q: q });
+      }
+      document.getElementById('resultModal').classList.add('hidden');
+      startGame(q[0], q[1]);
     }
   </script>
 </body>
