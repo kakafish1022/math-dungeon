@@ -3,826 +3,496 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-  <title>地牢切怪大冒險 - 雙人遠端對決版</title>
+  <title>地牢切怪 - 公因數公倍數雙人對決</title>
   <script src="https://cdn.tailwindcss.com"></script>
-  <script src="https://unpkg.com/peerjs@1.5.4/dist/peerjs.min.js"></script>
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;700;900&display=swap" rel="stylesheet">
-  <style>
-    * {
-      user-select: none;
-      -webkit-user-select: none;
-      touch-action: manipulation;
-    }
-    input {
-      user-select: auto;
-      -webkit-user-select: auto;
-    }
-    body {
-      font-family: 'Noto Sans TC', sans-serif;
-    }
-    .custom-scroll::-webkit-scrollbar {
-      width: 4px;
-    }
-    .custom-scroll::-webkit-scrollbar-thumb {
-      background: rgba(99, 102, 241, 0.4);
-      border-radius: 4px;
-    }
-    @keyframes screenShake {
-      0%, 100% { transform: translate(0, 0) rotate(0deg); }
-      15% { transform: translate(-15px, 10px) rotate(-2deg); }
-      30% { transform: translate(15px, -10px) rotate(2deg); }
-      45% { transform: translate(-10px, -5px) rotate(-1deg); }
-      60% { transform: translate(10px, 8px) rotate(1deg); }
-      75% { transform: translate(-5px, 5px) rotate(0deg); }
-    }
-    @keyframes punchIn {
-      0% { transform: translate(150%, 50%) rotate(40deg) scale(0.6); opacity: 0; }
-      40% { transform: translate(-20%, -10%) rotate(-15deg) scale(1.4); opacity: 1; }
-      70% { transform: translate(0%, 0%) rotate(0deg) scale(1.1); opacity: 1; }
-      100% { transform: translate(10%, 10%) rotate(5deg) scale(1); opacity: 1; }
-    }
-    .anim-shake { animation: screenShake 0.5s ease-out; }
-    .anim-punch { animation: punchIn 0.6s cubic-bezier(0.18, 0.89, 0.32, 1.28) forwards; }
-  </style>
+  <script src="https://unpkg.com/peerjs@1.5.2/dist/peerjs.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
 </head>
-<body class="bg-slate-950 text-slate-100 min-h-[100dvh] flex flex-col justify-between overflow-x-hidden">
-
-  <!-- 浮動訊息 Toast -->
-  <div id="toast" class="fixed top-4 left-1/2 -translate-x-1/2 z-50 bg-slate-900 border-2 border-indigo-500 text-white text-sm px-4 py-2 rounded-xl shadow-2xl transition-all duration-300 opacity-0 pointer-events-none transform -translate-y-2">
-    提示訊息
-  </div>
-
-  <!-- 大廳選單視窗 (Lobby) -->
-  <div id="lobbyScreen" class="fixed inset-0 bg-slate-950 z-40 flex flex-col items-center justify-center p-4">
-    <div class="max-w-md w-full bg-slate-900 border-2 border-indigo-500/60 rounded-3xl p-6 shadow-2xl text-center space-y-5">
-      <div class="space-y-1">
-        <span class="text-5xl">⚔️</span>
-        <h1 class="text-2xl font-black text-amber-300 tracking-wider">地牢切怪大冒險</h1>
-        <p class="text-xs text-indigo-300 font-bold">國中數學質因數分解・雙機連線對決</p>
-      </div>
-
-      <!-- 創房區 -->
-      <div class="bg-slate-950/80 p-4 rounded-2xl border border-slate-800 space-y-3">
-        <h2 class="text-sm font-bold text-rose-300">【我是房主・建立房間】</h2>
-        <button id="createRoomBtn" class="w-full bg-gradient-to-r from-rose-600 to-rose-700 hover:from-rose-500 text-white font-black py-3 rounded-xl shadow-lg active:scale-95 transition">
-          🏰 建立專屬房間 (產生 4 位數代碼)
-        </button>
-        <div id="roomCodeDisplay" class="hidden p-3 bg-indigo-950/70 border border-indigo-400 rounded-xl space-y-1">
-          <p class="text-xs text-indigo-300 font-bold">請讓對手輸入這組 4 碼代號：</p>
-          <div id="roomCodeText" class="text-4xl font-black text-amber-300 tracking-widest font-mono">----</div>
-          <p class="text-[11px] text-slate-400 animate-pulse">⏳ 等待對手加入中...</p>
-        </div>
-      </div>
-
-      <!-- 參戰區 -->
-      <div class="bg-slate-950/80 p-4 rounded-2xl border border-slate-800 space-y-3">
-        <h2 class="text-sm font-bold text-cyan-300">【我是挑戰者・加入戰局】</h2>
-        <div class="flex gap-2">
-          <input id="joinCodeInput" type="number" pattern="[0-9]*" inputmode="numeric" maxlength="4" placeholder="輸入 4 位數" class="flex-1 bg-slate-900 border-2 border-slate-700 focus:border-cyan-400 px-3 py-2 text-center text-2xl font-mono font-black text-amber-300 rounded-xl outline-none placeholder:text-slate-600 placeholder:text-sm">
-          <button id="joinRoomBtn" class="bg-gradient-to-r from-cyan-600 to-cyan-700 hover:from-cyan-500 text-white font-black px-6 py-2 rounded-xl shadow-lg active:scale-95 transition shrink-0">
-            ⚔️ 加入
-          </button>
-        </div>
-      </div>
-
-      <!-- 單機快速體驗按鈕 -->
-      <button id="soloBtn" class="w-full bg-slate-800 hover:bg-slate-700 border border-slate-600 text-slate-300 text-xs font-bold py-2.5 rounded-xl transition">
-        🤖 免連線・單機測試 (暗影 AI 對手)
-      </button>
-    </div>
-  </div>
+<body class="bg-slate-900 text-white min-h-screen flex flex-col items-center justify-between p-3 select-none touch-manipulation">
 
   <!-- 頂部資訊列 -->
-  <header class="bg-slate-900 border-b border-slate-800 px-4 py-2.5 flex items-center justify-between shrink-0 shadow-md">
-    <div class="flex items-center gap-2">
-      <span class="text-2xl" id="myRoleIcon">🔥</span>
-      <div>
-        <div id="myRoleText" class="text-xs font-black text-rose-400">我方勇者</div>
-        <div class="text-sm font-black text-slate-300">勝場: <span id="myScoreText" class="text-amber-300 text-base">0</span></div>
-      </div>
+  <header class="w-full max-w-sm flex items-center justify-between py-2 border-b border-slate-700/60 text-xs">
+    <div class="flex items-center gap-1.5 font-bold text-amber-400">
+      <span>🐉</span>
+      <span>公因數雙人戰</span>
     </div>
-
-    <div class="flex items-center gap-2">
-      <span id="connStatusBadge" class="text-[11px] bg-indigo-950 border border-indigo-700 text-indigo-300 font-bold px-2 py-0.5 rounded-full">
-        連線中
-      </span>
-      <button id="exitBattleBtn" class="text-[11px] bg-slate-800 hover:bg-slate-700 text-slate-300 font-bold px-2.5 py-1 rounded-lg border border-slate-700">
-        大廳
-      </button>
-    </div>
-
-    <div class="flex items-center gap-2 text-right">
-      <div>
-        <div id="oppRoleText" class="text-xs font-black text-cyan-400">對手</div>
-        <div class="text-sm font-black text-slate-300">勝場: <span id="oppScoreText" class="text-amber-300 text-base">0</span></div>
-      </div>
-      <span class="text-2xl" id="oppRoleIcon">⚡</span>
+    <div id="roomBadge" class="bg-slate-800 px-2 py-0.5 rounded text-slate-300 font-mono hidden">
+      房號: <span id="displayRoomCode" class="text-amber-400 font-bold">----</span>
     </div>
   </header>
 
-  <!-- 戰鬥主畫面 -->
-  <main class="flex-1 max-w-5xl w-full mx-auto p-3 flex flex-col justify-between gap-3 min-h-0">
-    
-    <!-- 我方主作戰區 -->
-    <section id="myCard" class="bg-slate-900/90 border-2 border-indigo-900/70 rounded-2xl p-3 flex-1 flex flex-col justify-between relative overflow-hidden shadow-xl min-h-[220px]">
-      <!-- 5 秒暈眩遮罩 -->
-      <div id="stunOverlay" class="absolute inset-0 bg-slate-950/90 backdrop-blur-sm z-30 flex flex-col items-center justify-center hidden">
-        <span class="text-4xl animate-bounce mb-1">🛡️</span>
-        <span class="text-lg font-black text-rose-400">攻擊反彈！無法整除！</span>
-        <div class="text-3xl font-black text-amber-300 my-1 font-mono"><span id="stunSeconds">5</span> 秒</div>
-        <p class="text-[11px] text-slate-400 font-bold">冷靜觀察尾數或位數和再出劍！</p>
-      </div>
+  <!-- 大廳畫面：開房 / 進房 -->
+  <main id="lobbyScreen" class="w-full max-w-sm flex-1 flex flex-col justify-center items-center gap-4 my-auto">
+    <div class="text-center">
+      <div class="text-4xl mb-2">⚔️</div>
+      <h2 class="text-xl font-black text-amber-400">雙子魔物・公因數對決</h2>
+      <p class="text-xs text-slate-400 mt-1">抽出兩數的共同質因數，一路切到互質並搶先斬殺！</p>
+    </div>
 
-      <!-- 標頭 -->
-      <div class="flex items-center justify-between border-b border-slate-800 pb-1.5 mb-2 shrink-0">
-        <span class="text-xs font-black text-indigo-300">⚔️ 我方短除法</span>
-        <div class="bg-indigo-950/80 px-3 py-0.5 rounded-lg border border-indigo-700">
-          <span class="text-[10px] text-indigo-200">當前怪獸：</span>
-          <span id="myTargetText" class="text-xl font-black text-amber-300 ml-1">360</span>
-        </div>
-      </div>
-
-      <!-- 短除法階梯 -->
-      <div id="myStairs" class="flex-1 custom-scroll overflow-y-auto p-2 flex flex-col items-center justify-start bg-slate-950/70 rounded-xl border border-slate-800"></div>
-
-      <!-- 操作狀態 -->
-      <div id="myStatusText" class="text-xs text-center py-1 mt-2 rounded-lg bg-slate-950 text-slate-300 font-bold border border-slate-800 shrink-0">
-        戰鬥開始！請拍擊下方神劍！
-      </div>
-    </section>
-
-    <!-- 對手即時雷達小看板 -->
-    <section class="bg-slate-900/60 border border-slate-800 rounded-xl p-2 shrink-0 flex items-center justify-between">
-      <div class="flex items-center gap-2">
-        <span class="text-xs font-bold text-slate-400">對手進度：</span>
-        <span id="oppTargetText" class="text-sm font-black text-amber-400">360</span>
-      </div>
-      <div id="oppMiniSteps" class="text-xs text-slate-300 flex items-center gap-1 font-mono overflow-x-auto">
-        <span>等待出招...</span>
-      </div>
-    </section>
-
-    <!-- 底部神劍拍擊區 -->
-    <div class="grid grid-cols-4 gap-2 h-20 sm:h-24 shrink-0">
-      <button data-prime="2" class="sword-btn bg-gradient-to-b from-blue-600 to-blue-700 text-white rounded-xl border-b-4 border-blue-950 flex flex-col items-center justify-center active:translate-y-1 transition shadow-lg">
-        <span class="text-2xl font-black">2</span>
-        <span class="text-[10px] text-blue-200 font-bold">雙數</span>
+    <!-- 開房區塊 -->
+    <div class="w-full bg-slate-800/80 p-4 rounded-2xl border border-slate-700 flex flex-col gap-3">
+      <button type="button" id="btnCreateRoom" onclick="createRoom()" class="w-full py-3 bg-indigo-600 hover:bg-indigo-500 rounded-xl font-bold text-sm tracking-wide shadow-lg active:scale-95 transition-all">
+        🏠 建立房間（產生 4 碼）
       </button>
-      <button data-prime="3" class="sword-btn bg-gradient-to-b from-rose-600 to-rose-700 text-white rounded-xl border-b-4 border-rose-950 flex flex-col items-center justify-center active:translate-y-1 transition shadow-lg">
-        <span class="text-2xl font-black">3</span>
-        <span class="text-[10px] text-rose-200 font-bold">和為3倍</span>
-      </button>
-      <button data-prime="5" class="sword-btn bg-gradient-to-b from-emerald-600 to-emerald-700 text-white rounded-xl border-b-4 border-emerald-950 flex flex-col items-center justify-center active:translate-y-1 transition shadow-lg">
-        <span class="text-2xl font-black">5</span>
-        <span class="text-[10px] text-emerald-200 font-bold">尾數0/5</span>
-      </button>
-      <button data-prime="7" class="sword-btn bg-gradient-to-b from-purple-600 to-purple-700 text-white rounded-xl border-b-4 border-purple-950 flex flex-col items-center justify-center active:translate-y-1 transition shadow-lg">
-        <span class="text-2xl font-black">7</span>
-        <span class="text-[10px] text-purple-200 font-bold">7的倍數</span>
-      </button>
+      <div id="createStatus" class="text-xs text-center text-amber-300 font-mono hidden"></div>
+    </div>
+
+    <div class="text-xs text-slate-500 font-bold">— 或是 —</div>
+
+    <!-- 加入房間區塊 -->
+    <div class="w-full bg-slate-800/80 p-4 rounded-2xl border border-slate-700 flex flex-col gap-2">
+      <label class="text-xs text-slate-300 font-medium">輸入對手 4 碼房號：</label>
+      <div class="flex gap-2">
+        <input id="inputRoomCode" type="text" maxlength="4" placeholder="例如: 8821" 
+          class="flex-1 bg-slate-900 border border-slate-600 rounded-xl px-3 py-2 text-center text-lg font-bold font-mono tracking-widest uppercase focus:outline-none focus:border-amber-400">
+        <button type="button" onclick="joinRoom()" class="px-5 py-2 bg-emerald-600 hover:bg-emerald-500 rounded-xl font-bold text-sm active:scale-95 transition-all">
+          加入
+        </button>
+      </div>
+      <div id="joinStatus" class="text-xs text-center text-rose-400 font-medium hidden"></div>
     </div>
   </main>
 
-  <!-- 全螢幕贏家煙火結算層 -->
-  <div id="winScreen" class="fixed inset-0 z-50 bg-slate-950/80 backdrop-blur-md flex flex-col items-center justify-center p-4 hidden">
-    <canvas id="fireworksCanvas" class="absolute inset-0 pointer-events-none"></canvas>
-    <div class="relative z-10 max-w-sm w-full bg-slate-900 border-4 border-amber-400 rounded-3xl p-6 text-center shadow-2xl space-y-4">
-      <div class="text-7xl animate-bounce">👑</div>
-      <h2 class="text-3xl font-black text-amber-300">VICTORY 獲勝！</h2>
-      <p class="text-xs text-emerald-300 font-bold">「成功搶先斬出標準分解式！」</p>
-      <div id="winFactorResult" class="bg-slate-950 p-3 rounded-xl border border-amber-500/50 text-xl font-black text-amber-300 font-mono">
-        360 = 2³ × 3² × 5
-      </div>
-      <button id="rematchBtnWin" class="w-full bg-gradient-to-r from-amber-500 to-yellow-500 text-slate-950 font-black py-3 rounded-xl shadow-lg active:scale-95 transition">
-        ⚔️ 邀請對手再戰一局
-      </button>
-      <div id="rematchWaitingWin" class="text-xs text-amber-300 animate-pulse hidden">
-        ⏳ 已發送再戰邀請，等待對手同意...
+  <!-- 戰鬥畫面 (預設隱藏) -->
+  <main id="battleScreen" class="w-full max-w-sm flex-1 flex flex-col justify-between hidden my-1">
+    
+    <!-- 對手狀態縮小條 -->
+    <div class="bg-slate-800/60 border border-slate-700/60 rounded-xl p-2 flex items-center justify-between text-xs">
+      <span class="text-slate-400">對手進度:</span>
+      <div class="flex items-center gap-2 font-mono">
+        <span id="enemyNums" class="text-slate-300 font-bold">[ ?, ? ]</span>
+        <span id="enemyStatus" class="text-emerald-400 text-[11px]">作戰中</span>
       </div>
     </div>
-  </div>
 
-  <!-- 全螢幕輸家 KO 重擊層 -->
-  <div id="loseScreen" class="fixed inset-0 z-50 bg-rose-950/40 backdrop-blur-md flex flex-col items-center justify-center p-4 hidden">
-    <div id="losePunchContainer" class="relative z-10 max-w-sm w-full bg-slate-900 border-4 border-rose-600 rounded-3xl p-6 text-center shadow-2xl space-y-4">
-      <div class="text-7xl anim-punch">🥊</div>
-      <h2 class="text-3xl font-black text-rose-400">DEFEAT 被擊倒！</h2>
-      <p class="text-xs text-slate-300 font-bold">對手率先解開了怪獸核心！</p>
-      <div id="loseFactorResult" class="bg-slate-950 p-3 rounded-xl border border-slate-800 text-base font-bold text-slate-300 font-mono">
-        ---
+    <!-- 本地雙子怪中央顯示區 -->
+    <div class="relative bg-slate-800 rounded-2xl border-2 border-slate-700 p-4 flex flex-col items-center justify-center my-2 shadow-inner">
+      <div class="text-xs text-slate-400 font-medium mb-1">雙子怪核心數值</div>
+
+      <!-- 兩個數字並列 -->
+      <div class="flex items-center justify-center gap-3 my-2 w-full">
+        <div class="flex-1 bg-slate-900/90 border border-amber-500/40 rounded-xl py-3 text-center shadow-lg">
+          <div class="text-[10px] text-amber-300/70 font-mono">數值 A</div>
+          <div id="numA" class="text-3xl font-black text-amber-400 font-mono tracking-tight">--</div>
+        </div>
+        <div class="text-xl font-black text-slate-500 font-mono">&</div>
+        <div class="flex-1 bg-slate-900/90 border border-amber-500/40 rounded-xl py-3 text-center shadow-lg">
+          <div class="text-[10px] text-amber-300/70 font-mono">數值 B</div>
+          <div id="numB" class="text-3xl font-black text-amber-400 font-mono tracking-tight">--</div>
+        </div>
       </div>
-      <button id="rematchBtnLose" class="w-full bg-gradient-to-r from-rose-600 to-rose-700 text-white font-black py-3 rounded-xl shadow-lg active:scale-95 transition">
-        🔥 不服輸！發起復仇再戰
-      </button>
-      <div id="rematchWaitingLose" class="text-xs text-rose-300 animate-pulse hidden">
-        ⏳ 已發送邀請，等待對手同意...
+
+      <!-- 已分解公因數紀錄 -->
+      <div class="text-xs text-slate-400 mt-1 flex items-center gap-1 font-mono">
+        <span>已抽出的公因數:</span>
+        <span id="factorsHistory" class="text-emerald-400 font-bold">無</span>
+      </div>
+
+      <!-- 彈刀 / 誤判懲罰遮罩 -->
+      <div id="stunOverlay" class="absolute inset-0 bg-slate-950/85 backdrop-blur-sm rounded-2xl flex flex-col items-center justify-center gap-1 hidden z-20">
+        <div class="text-3xl animate-bounce">⚡</div>
+        <div class="text-sm font-black text-rose-400">彈刀懲罰！</div>
+        <div class="text-xs text-slate-300">不能同時整除，冷卻倒數: <span id="stunCount" class="font-bold text-amber-400">3</span> 秒</div>
       </div>
     </div>
-  </div>
 
-  <!-- 對手發起再戰確認彈窗 -->
-  <div id="rematchConfirmModal" class="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm flex items-center justify-center p-4 hidden">
-    <div class="max-w-xs w-full bg-slate-900 border-2 border-indigo-500 rounded-2xl p-5 text-center space-y-3">
-      <span class="text-4xl">⚔️</span>
-      <h3 class="text-lg font-black text-amber-300">對手發起再戰邀請！</h3>
-      <p class="text-xs text-slate-300">是否立即接受挑戰？</p>
-      <div class="flex gap-2 pt-2">
-        <button id="acceptRematchBtn" class="flex-1 bg-emerald-600 hover:bg-emerald-500 text-white font-black py-2 rounded-xl text-xs">
-          接受再戰！
+    <!-- 終結技：互質斬殺大按鈕 -->
+    <div class="w-full mb-2">
+      <button type="button" id="btnCoprime" onclick="claimCoprime()" class="w-full py-3 bg-gradient-to-r from-amber-500 via-rose-500 to-amber-500 rounded-xl font-black text-base tracking-wider text-white shadow-lg shadow-rose-950/50 border border-amber-300 active:scale-95 transition-all">
+        ⚡ 雙數互質！發動終結斬殺
+      </button>
+      <p class="text-[10px] text-slate-400 text-center mt-1">※ 注意：若仍有大於 1 的公因數卻按下，將被重罰凍結 4 秒！</p>
+    </div>
+
+    <!-- 下方神劍操作面板 (擴充為 5 顆：2, 3, 5, 7, 11) -->
+    <div class="grid grid-cols-5 gap-1.5 w-full">
+      <button type="button" onclick="slash(2)" class="slash-btn py-3 bg-slate-800 hover:bg-slate-700 active:scale-90 border-2 border-indigo-500/50 rounded-xl flex flex-col items-center justify-center transition-all">
+        <span class="text-[9px] text-indigo-300 font-semibold">神劍</span>
+        <span class="text-xl font-black text-indigo-400 font-mono">2</span>
+      </button>
+      <button type="button" onclick="slash(3)" class="slash-btn py-3 bg-slate-800 hover:bg-slate-700 active:scale-90 border-2 border-emerald-500/50 rounded-xl flex flex-col items-center justify-center transition-all">
+        <span class="text-[9px] text-emerald-300 font-semibold">神劍</span>
+        <span class="text-xl font-black text-emerald-400 font-mono">3</span>
+      </button>
+      <button type="button" onclick="slash(5)" class="slash-btn py-3 bg-slate-800 hover:bg-slate-700 active:scale-90 border-2 border-amber-500/50 rounded-xl flex flex-col items-center justify-center transition-all">
+        <span class="text-[9px] text-amber-300 font-semibold">神劍</span>
+        <span class="text-xl font-black text-amber-400 font-mono">5</span>
+      </button>
+      <button type="button" onclick="slash(7)" class="slash-btn py-3 bg-slate-800 hover:bg-slate-700 active:scale-90 border-2 border-rose-500/50 rounded-xl flex flex-col items-center justify-center transition-all">
+        <span class="text-[9px] text-rose-300 font-semibold">神劍</span>
+        <span class="text-xl font-black text-rose-400 font-mono">7</span>
+      </button>
+      <button type="button" onclick="slash(11)" class="slash-btn py-3 bg-slate-800 hover:bg-slate-700 active:scale-90 border-2 border-cyan-500/50 rounded-xl flex flex-col items-center justify-center transition-all">
+        <span class="text-[9px] text-cyan-300 font-semibold">神劍</span>
+        <span class="text-xl font-black text-cyan-400 font-mono">11</span>
+      </button>
+    </div>
+
+  </main>
+
+  <!-- 放大版結算彈窗 -->
+  <div id="resultModal" class="fixed inset-0 bg-slate-950/90 backdrop-blur-md flex items-center justify-center p-3 hidden z-50">
+    <div class="max-w-sm w-full bg-slate-800 border-2 border-slate-700 rounded-3xl p-6 text-center flex flex-col items-center shadow-2xl">
+      <div id="resultIcon" class="text-6xl mb-2">🏆</div>
+      <h3 id="resultTitle" class="text-2xl font-black text-amber-400 mb-1">獲得勝利！</h3>
+      <p id="resultDesc" class="text-xs text-slate-300 mb-4">精準判斷互質時機，成功發動斬殺！</p>
+
+      <!-- 放大版數學短除法回顧區塊 -->
+      <div class="w-full bg-slate-900/90 rounded-2xl p-4 border border-slate-700 text-left text-sm space-y-2 font-mono mb-5 shadow-inner">
+        <div class="text-amber-400/90 text-xs font-bold border-b border-slate-700/60 pb-1 flex justify-between items-center">
+          <span>短除法結算教學分析</span>
+          <span class="text-[10px] text-slate-500">標準分解</span>
+        </div>
+        
+        <div class="flex justify-between items-center text-xs">
+          <span class="text-slate-400">題目原始數值：</span>
+          <span id="summaryInitNums" class="text-amber-300 font-black text-sm"></span>
+        </div>
+
+        <div class="flex justify-between items-center text-xs">
+          <span class="text-slate-400">抽出公因數：</span>
+          <span id="summaryFactorList" class="text-cyan-300 font-bold"></span>
+        </div>
+
+        <div class="flex justify-between items-center text-xs">
+          <span class="text-slate-400">最後互質商數：</span>
+          <span id="summaryRemain" class="text-slate-300 font-bold"></span>
+        </div>
+
+        <div class="pt-1 border-t border-slate-800 flex justify-between items-center">
+          <span class="text-emerald-400 font-bold">最大公因數 (GCD)：</span>
+          <span id="summaryGcd" class="text-emerald-400 font-black text-base"></span>
+        </div>
+
+        <div class="flex justify-between items-center">
+          <span class="text-indigo-400 font-bold">最小公倍數 (LCM)：</span>
+          <span id="summaryLcm" class="text-indigo-400 font-black text-base"></span>
+        </div>
+      </div>
+
+      <!-- 再戰提示狀態 -->
+      <div id="rematchStatus" class="text-xs text-amber-300 font-medium mb-3 min-h-[1.25rem]"></div>
+
+      <!-- 按鈕群 -->
+      <div class="flex gap-2 w-full">
+        <button type="button" id="btnRematch" onclick="requestRematch(event)" class="flex-1 py-3 bg-indigo-600 hover:bg-indigo-500 rounded-xl font-bold text-sm active:scale-95 transition-all">
+          再來一局
         </button>
-        <button id="declineRematchBtn" class="flex-1 bg-slate-800 hover:bg-slate-700 text-slate-300 font-bold py-2 rounded-xl text-xs">
-          休兵暫停
+        <button type="button" onclick="leaveToLobby()" class="px-4 py-3 bg-slate-700 hover:bg-slate-600 rounded-xl font-bold text-sm text-slate-300 active:scale-95 transition-all">
+          回大廳
         </button>
       </div>
     </div>
   </div>
 
-  <!-- 休兵看板 -->
-  <div id="pauseScreen" class="fixed inset-0 z-40 bg-slate-950/95 flex flex-col items-center justify-center p-4 hidden">
-    <div class="max-w-sm w-full bg-slate-900 border-2 border-slate-700 rounded-3xl p-6 text-center space-y-4">
-      <span class="text-6xl">🕊️</span>
-      <h3 class="text-2xl font-black text-slate-200">雙方暫停休兵</h3>
-      <p class="text-xs text-slate-400">勇者稍作休整，隨時可重新開戰</p>
-      <button id="resumeBattleBtn" class="w-full bg-gradient-to-r from-amber-500 to-yellow-500 text-slate-950 font-black py-3 rounded-xl">
-        ⚔️ 重新發起戰鬥
-      </button>
-      <button id="pauseExitBtn" class="w-full bg-slate-800 text-slate-300 font-bold py-2 rounded-xl text-xs">
-        返回大廳
-      </button>
-    </div>
-  </div>
+  <footer class="w-full text-center py-1 text-[10px] text-slate-500">
+    PeerJS P2P Dual GCD & LCM Engine
+  </footer>
 
   <script>
-    /* 音效系統 (Web Audio) */
-    let audioCtx = null;
-    function initAudio() {
-      if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-      if (audioCtx.state === 'suspended') audioCtx.resume();
+    let peer = null;
+    let conn = null;
+    let isHost = false;
+    let myA = 0, myB = 0;
+    let initA = 0, initB = 0;
+    let myFactors = [];
+    let isStunned = false;
+    let gameOver = false;
+
+    let rematchRequestedByMe = false;
+    let rematchRequestedByPeer = false;
+
+    // 歐幾里得輾轉相除法求 GCD
+    function calcGcd(a, b) {
+      return b === 0 ? a : calcGcd(b, a % b);
     }
-    function playSfx(type) {
-      if (!audioCtx) return;
-      const now = audioCtx.currentTime;
-      if (type === 'slash') {
-        const osc = audioCtx.createOscillator();
-        const gain = audioCtx.createGain();
-        osc.type = 'sawtooth';
-        osc.frequency.setValueAtTime(450, now);
-        osc.frequency.exponentialRampToValueAtTime(100, now + 0.12);
-        gain.gain.setValueAtTime(0.25, now);
-        gain.gain.exponentialRampToValueAtTime(0.01, now + 0.12);
-        osc.connect(gain);
-        gain.connect(audioCtx.destination);
-        osc.start(now);
-        osc.stop(now + 0.12);
-      } else if (type === 'bounce') {
-        const osc = audioCtx.createOscillator();
-        const gain = audioCtx.createGain();
-        osc.type = 'sine';
-        osc.frequency.setValueAtTime(140, now);
-        osc.frequency.exponentialRampToValueAtTime(60, now + 0.3);
-        gain.gain.setValueAtTime(0.3, now);
-        gain.gain.exponentialRampToValueAtTime(0.01, now + 0.3);
-        osc.connect(gain);
-        gain.connect(audioCtx.destination);
-        osc.start(now);
-        osc.stop(now + 0.3);
-      } else if (type === 'punch') {
-        const osc = audioCtx.createOscillator();
-        const gain = audioCtx.createGain();
-        osc.type = 'triangle';
-        osc.frequency.setValueAtTime(120, now);
-        osc.frequency.exponentialRampToValueAtTime(40, now + 0.3);
-        gain.gain.setValueAtTime(0.4, now);
-        gain.gain.exponentialRampToValueAtTime(0.01, now + 0.3);
-        osc.connect(gain);
-        gain.connect(audioCtx.destination);
-        osc.start(now);
-        osc.stop(now + 0.3);
-      } else if (type === 'win') {
-        [261, 329, 392, 523, 659].forEach((f, i) => {
-          const osc = audioCtx.createOscillator();
-          const gain = audioCtx.createGain();
-          osc.type = 'triangle';
-          osc.frequency.setValueAtTime(f, now + i * 0.08);
-          gain.gain.setValueAtTime(0.2, now + i * 0.08);
-          gain.gain.exponentialRampToValueAtTime(0.01, now + i * 0.08 + 0.2);
-          osc.connect(gain);
-          gain.connect(audioCtx.destination);
-          osc.start(now + i * 0.08);
-          osc.stop(now + i * 0.08 + 0.2);
-        });
+
+    // 題目動態隨機生成（包含 2, 3, 5, 7, 11）
+    function generateRandomGcdQuestion() {
+      // 隨機池：加重 2, 3, 5 比重，適量出現 7 與 11
+      const primePool = [2, 2, 2, 3, 3, 3, 5, 5, 7, 11];
+      
+      // 隨機抽 2 ~ 3 個質數相乘作為最大公因數
+      const count = Math.floor(Math.random() * 2) + 2;
+      let gcdBase = 1;
+      for (let i = 0; i < count; i++) {
+        const p = primePool[Math.floor(Math.random() * primePool.length)];
+        gcdBase *= p;
       }
-    }
 
-    /* 浮動提示 Toast */
-    function showToast(msg) {
-      const toast = document.getElementById('toast');
-      toast.textContent = msg;
-      toast.classList.remove('opacity-0', 'pointer-events-none', '-translate-y-2');
-      setTimeout(() => {
-        toast.classList.add('opacity-0', 'pointer-events-none', '-translate-y-2');
-      }, 2500);
-    }
+      // 挑選互質的小商數對
+      const coprimePairs = [
+        [1, 2], [1, 3], [1, 4], [1, 5],
+        [2, 3], [2, 5], [2, 7],
+        [3, 4], [3, 5], [3, 7],
+        [4, 5], [5, 6]
+      ];
+      const pair = coprimePairs[Math.floor(Math.random() * coprimePairs.length)];
 
-    /* 題庫 (國中七年級三位數質因數分解) */
-    const QUESTION_POOL = [
-      120, 144, 168, 180, 216, 240, 252, 280, 315, 360, 420, 504, 540, 600, 720, 840, 900
-    ];
+      const a = gcdBase * pair[0];
+      const b = gcdBase * pair[1];
 
-    /* 遊戲全域狀態 */
-    const APP = {
-      isHost: false,
-      isSolo: false,
-      peer: null,
-      conn: null,
-      roomCode: '',
-      myScore: 0,
-      oppScore: 0,
-      targetNumber: 360,
-      myVal: 360,
-      mySteps: [],
-      oppVal: 360,
-      oppSteps: [],
-      stunned: false,
-      isEnded: false,
-      aiTimer: null
-    };
-
-    const PEER_PREFIX = 'mdun-'; // 隱形命名空間，防止與全世界撞名
-
-    function isPrime(num) {
-      if (num < 2) return false;
-      for (let i = 2; i * i <= num; i++) {
-        if (num % i === 0) return false;
+      // 若乘積過大(>1500)，重新生成以維持心算友善度
+      if (a > 1500 || b > 1500) {
+        return generateRandomGcdQuestion();
       }
-      return true;
+
+      return Math.random() > 0.5 ? [a, b] : [b, a];
     }
 
-    function canCut(val, prime) {
-      return val % prime === 0 && val > prime;
+    function generate4Code() {
+      return Math.floor(1000 + Math.random() * 9000).toString();
     }
 
-    function formatStandard(primes) {
-      const counts = {};
-      primes.forEach(p => counts[p] = (counts[p] || 0) + 1);
-      return Object.keys(counts).sort((a,b)=>a-b).map(p => {
-        return counts[p] === 1 ? `${p}` : `${p}<sup>${counts[p]}</sup>`;
-      }).join(' × ');
-    }
+    function createRoom() {
+      isHost = true;
+      const code = generate4Code();
+      const statusEl = document.getElementById('createStatus');
+      statusEl.classList.remove('hidden');
+      statusEl.innerText = "正在連線伺服器，分配房號...";
 
-    /* 初始化 Peer 連線 */
-    function initHostPeer(fourDigitCode) {
-      const fullPeerId = PEER_PREFIX + fourDigitCode;
-      APP.peer = new Peer(fullPeerId);
+      peer = new Peer(code);
 
-      APP.peer.on('open', (id) => {
-        document.getElementById('roomCodeText').textContent = fourDigitCode;
-        document.getElementById('roomCodeDisplay').classList.remove('hidden');
-        showToast(`房間已建立！代碼: ${fourDigitCode}`);
+      peer.on('open', (id) => {
+        statusEl.innerHTML = `房間已建立！你的 4 碼是：<strong class="text-amber-400 text-sm tracking-widest">${id}</strong><br>請讓對手輸入加入...`;
+        document.getElementById('displayRoomCode').innerText = id;
+        document.getElementById('roomBadge').classList.remove('hidden');
       });
 
-      APP.peer.on('connection', (connection) => {
-        APP.conn = connection;
-        setupConnectionEvents();
-        showToast('挑戰者已連線！正在同步戰局...');
-        // 房主發送起始題目
+      peer.on('connection', (c) => {
+        conn = c;
+        setupConnection();
+        const q = generateRandomGcdQuestion();
         setTimeout(() => {
-          APP.targetNumber = QUESTION_POOL[Math.floor(Math.random() * QUESTION_POOL.length)];
-          APP.conn.send({ type: 'START_GAME', target: APP.targetNumber });
-          startGame();
-        }, 600);
+          startGame(q[0], q[1]);
+          conn.send({ type: 'START', q: q });
+        }, 500);
       });
 
-      APP.peer.on('error', (err) => {
-        console.error('Peer error:', err);
-        if (err.type === 'unavailable-id') {
-          showToast('該代號已被佔用，請重新點擊建立！');
-        } else {
-          showToast(`連線異常: ${err.type}`);
-        }
+      peer.on('error', () => {
+        statusEl.innerText = "開房失敗，請再試一次或重新整理。";
       });
     }
 
-    function joinRoom(fourDigitCode) {
-      const joinBtn = document.getElementById('joinRoomBtn');
-      joinBtn.textContent = '連線中...';
-      joinBtn.disabled = true;
-
-      APP.peer = new Peer(); // 挑戰者由系統隨機分派 ID
-      APP.peer.on('open', () => {
-        const targetPeerId = PEER_PREFIX + fourDigitCode;
-        APP.conn = APP.peer.connect(targetPeerId, { reliable: true });
-
-        // 設置 5 秒超時檢查
-        const timeout = setTimeout(() => {
-          if (!APP.conn || !APP.conn.open) {
-            joinBtn.textContent = '⚔️ 加入';
-            joinBtn.disabled = false;
-            showToast('找不到該房間！請確認 4 碼代號是否正確。');
-          }
-        }, 5000);
-
-        APP.conn.on('open', () => {
-          clearTimeout(timeout);
-          joinBtn.textContent = '⚔️ 加入';
-          joinBtn.disabled = false;
-          setupConnectionEvents();
-          showToast('成功加入房間！等待房主開戰...');
-        });
-      });
-
-      APP.peer.on('error', (err) => {
-        joinBtn.textContent = '⚔️ 加入';
-        joinBtn.disabled = false;
-        showToast(`連線失敗: ${err.type}`);
-      });
-    }
-
-    function setupConnectionEvents() {
-      APP.conn.on('data', (data) => {
-        if (data.type === 'START_GAME') {
-          APP.targetNumber = data.target;
-          startGame();
-        } else if (data.type === 'OPP_SLASH') {
-          handleOpponentSlash(data.prime, data.newVal);
-        } else if (data.type === 'OPP_WIN') {
-          handleOpponentWin(data.factors);
-        } else if (data.type === 'REMATCH_REQ') {
-          document.getElementById('rematchConfirmModal').classList.remove('hidden');
-        } else if (data.type === 'REMATCH_ACCEPT') {
-          if (APP.isHost) {
-            APP.targetNumber = QUESTION_POOL[Math.floor(Math.random() * QUESTION_POOL.length)];
-            APP.conn.send({ type: 'START_GAME', target: APP.targetNumber });
-            startGame();
-          }
-        } else if (data.type === 'REMATCH_PAUSE') {
-          showPauseScreen();
-        }
-      });
-
-      APP.conn.on('close', () => {
-        showToast('對手已離開房間！');
-        document.getElementById('connStatusBadge').textContent = '對手離線';
-        document.getElementById('connStatusBadge').className = 'text-[11px] bg-rose-950 border border-rose-700 text-rose-300 font-bold px-2 py-0.5 rounded-full';
-      });
-    }
-
-    /* 開始對決畫面切換 */
-    function startGame() {
-      APP.isEnded = false;
-      APP.myVal = APP.targetNumber;
-      APP.oppVal = APP.targetNumber;
-      APP.mySteps = [];
-      APP.oppSteps = [];
-      APP.stunned = false;
-
-      // 關閉大廳與所有結算層
-      document.getElementById('lobbyScreen').classList.add('hidden');
-      document.getElementById('winScreen').classList.add('hidden');
-      document.getElementById('loseScreen').classList.add('hidden');
-      document.getElementById('rematchConfirmModal').classList.add('hidden');
-      document.getElementById('pauseScreen').classList.add('hidden');
-      document.getElementById('stunOverlay').classList.add('hidden');
-
-      document.getElementById('rematchWaitingWin').classList.add('hidden');
-      document.getElementById('rematchWaitingLose').classList.add('hidden');
-
-      // 角色圖示配置
-      if (APP.isHost) {
-        document.getElementById('myRoleIcon').textContent = '🔥';
-        document.getElementById('myRoleText').textContent = '我方 (房主)';
-        document.getElementById('oppRoleIcon').textContent = '⚡';
-        document.getElementById('oppRoleText').textContent = '對手 (挑戰者)';
-      } else {
-        document.getElementById('myRoleIcon').textContent = '⚡';
-        document.getElementById('myRoleText').textContent = '我方 (挑戰者)';
-        document.getElementById('oppRoleIcon').textContent = '🔥';
-        document.getElementById('oppRoleText').textContent = '對手 (房主)';
-      }
-
-      document.getElementById('connStatusBadge').textContent = APP.isSolo ? '單機AI' : '已連線';
-      document.getElementById('connStatusBadge').className = 'text-[11px] bg-emerald-950 border border-emerald-600 text-emerald-300 font-bold px-2 py-0.5 rounded-full';
-
-      document.getElementById('myTargetText').textContent = APP.targetNumber;
-      document.getElementById('oppTargetText').textContent = APP.targetNumber;
-      document.getElementById('oppMiniSteps').innerHTML = '<span>等待出招...</span>';
-      document.getElementById('myStatusText').textContent = '戰鬥開始！請拍擊下方神劍！';
-      document.getElementById('myStatusText').className = 'text-xs text-center py-1 mt-2 rounded-lg bg-slate-950 text-slate-300 font-bold border border-slate-800 shrink-0';
-
-      renderMyStairs();
-
-      // 單機 AI 模式啟動
-      if (APP.isSolo) {
-        clearInterval(APP.aiTimer);
-        APP.aiTimer = setInterval(runAiTurn, 3200);
-      }
-    }
-
-    function renderMyStairs() {
-      const container = document.getElementById('myStairs');
-      container.innerHTML = '';
-
-      if (APP.mySteps.length === 0) {
-        container.innerHTML = `
-          <div class="flex items-center gap-2 my-2">
-            <span class="w-10 text-center text-slate-600 text-2xl font-black">?</span>
-            <div class="border-l-[4px] border-b-[4px] border-indigo-400 py-1 pl-3 pr-4 rounded-bl-lg bg-slate-950/80">
-              <span class="text-2xl font-black text-amber-300 tracking-wider">${APP.targetNumber}</span>
-            </div>
-          </div>
-        `;
+    function joinRoom() {
+      isHost = false;
+      const input = document.getElementById('inputRoomCode').value.trim();
+      const statusEl = document.getElementById('joinStatus');
+      if (input.length !== 4) {
+        statusEl.innerText = "請輸入正確的 4 位數字房號！";
+        statusEl.classList.remove('hidden');
         return;
       }
 
-      APP.mySteps.forEach(st => {
-        const row = document.createElement('div');
-        row.className = 'flex items-center gap-2 my-1';
-        row.innerHTML = `
-          <span class="w-10 text-center text-cyan-300 text-lg font-black bg-indigo-950/90 py-0.5 rounded-lg border border-cyan-400/40">
-            ${st.divisor}
-          </span>
-          <div class="border-l-[4px] border-b-[4px] border-indigo-400 py-1 pl-3 pr-4 rounded-bl-lg bg-slate-950/80">
-            <span class="text-lg font-black text-slate-100">${st.before}</span>
-          </div>
-        `;
-        container.appendChild(row);
+      statusEl.innerText = "連線對手中...";
+      statusEl.classList.remove('hidden');
+
+      peer = new Peer();
+      peer.on('open', () => {
+        conn = peer.connect(input);
+        setupConnection();
       });
 
-      const bottom = document.createElement('div');
-      bottom.className = 'flex items-center gap-2 my-1';
-      const isEnd = isPrime(APP.myVal);
-      bottom.innerHTML = `
-        <span class="w-10 text-center text-xs text-slate-500 font-bold">${isEnd ? '✨' : '└─'}</span>
-        <div class="py-1 pl-3 pr-4 rounded-lg ${isEnd ? 'bg-emerald-950/90 border border-emerald-400 text-emerald-300 font-black' : 'bg-slate-950/60 border border-slate-700 text-slate-200'}">
-          <span class="text-lg font-black">${APP.myVal}</span>
-          ${isEnd ? '<span class="text-[10px] ml-1.5 text-emerald-400">【質數硬核】</span>' : ''}
-        </div>
-      `;
-      container.appendChild(bottom);
-      container.scrollTop = container.scrollHeight;
+      peer.on('error', () => {
+        statusEl.innerText = "找不到該房號，請確認後重試。";
+      });
     }
 
-    /* 我方出劍邏輯 */
-    function applyMySlash(prime) {
-      if (APP.isEnded || APP.stunned) return;
-      initAudio();
+    function setupConnection() {
+      conn.on('open', () => {
+        document.getElementById('lobbyScreen').classList.add('hidden');
+        document.getElementById('battleScreen').classList.remove('hidden');
+      });
 
-      if (canCut(APP.myVal, prime)) {
-        playSfx('slash');
-        APP.mySteps.push({ divisor: prime, before: APP.myVal });
-        APP.myVal /= prime;
-        document.getElementById('myTargetText').textContent = APP.myVal;
-        renderMyStairs();
+      conn.on('data', (data) => {
+        if (!data) return;
 
-        document.getElementById('myStatusText').textContent = `💥 斬擊成功！整除以 ${prime}`;
-        document.getElementById('myStatusText').className = 'text-xs text-center py-1 mt-2 rounded-lg bg-emerald-950 text-emerald-300 font-bold border border-emerald-500/50 shrink-0';
-
-        // 同步給對手
-        if (APP.conn && APP.conn.open) {
-          APP.conn.send({ type: 'OPP_SLASH', prime: prime, newVal: APP.myVal });
+        if (data.type === 'START') {
+          startGame(data.q[0], data.q[1]);
+        } else if (data.type === 'PROGRESS') {
+          document.getElementById('enemyNums').innerText = `[ ${data.a}, ${data.b} ]`;
+        } else if (data.type === 'WIN') {
+          triggerGameOver(false, data.finalGcd, data.finalLcm, data.lastA, data.lastB, data.factors);
+        } else if (data.type === 'REMATCH_REQUEST') {
+          handleRematchRequest();
+        } else if (data.type === 'REMATCH_START') {
+          document.getElementById('resultModal').classList.add('hidden');
+          startGame(data.q[0], data.q[1]);
         }
+      });
+    }
 
-        // 判斷獲勝
-        if (isPrime(APP.myVal)) {
-          triggerMyVictory();
+    function startGame(a, b) {
+      myA = a; myB = b;
+      initA = a; initB = b;
+      myFactors = [];
+      isStunned = false;
+      gameOver = false;
+
+      rematchRequestedByMe = false;
+      rematchRequestedByPeer = false;
+
+      const btn = document.getElementById('btnRematch');
+      const statusEl = document.getElementById('rematchStatus');
+      if (btn) {
+        btn.disabled = false;
+        btn.classList.remove('opacity-50', 'cursor-not-allowed', 'ring-2', 'ring-amber-400', 'animate-pulse');
+        btn.innerText = "再來一局";
+      }
+      if (statusEl) statusEl.innerText = '';
+
+      document.getElementById('enemyNums').innerText = `[ ${a}, ${b} ]`;
+      updateUI();
+    }
+
+    function updateUI() {
+      document.getElementById('numA').innerText = myA;
+      document.getElementById('numB').innerText = myB;
+      document.getElementById('factorsHistory').innerText = myFactors.length > 0 ? myFactors.join(' × ') : '無';
+    }
+
+    function slash(prime) {
+      if (isStunned || gameOver) return;
+
+      if (myA % prime === 0 && myB % prime === 0) {
+        myA /= prime;
+        myB /= prime;
+        myFactors.push(prime);
+        updateUI();
+
+        if (conn && conn.open) {
+          conn.send({ type: 'PROGRESS', a: myA, b: myB });
         }
       } else {
-        // 5 秒彈刀懲罰
-        playSfx('bounce');
-        triggerStunPenalty();
+        triggerStun(3);
       }
     }
 
-    function triggerStunPenalty() {
-      APP.stunned = true;
+    function claimCoprime() {
+      if (isStunned || gameOver) return;
+
+      const currentGcd = calcGcd(myA, myB);
+      if (currentGcd === 1) {
+        const totalGcd = myFactors.reduce((acc, val) => acc * val, 1);
+        const totalLcm = totalGcd * myA * myB;
+        if (conn && conn.open) {
+          conn.send({ 
+            type: 'WIN', 
+            finalGcd: totalGcd, 
+            finalLcm: totalLcm, 
+            lastA: myA, 
+            lastB: myB,
+            factors: myFactors
+          });
+        }
+        triggerGameOver(true, totalGcd, totalLcm, myA, myB, myFactors);
+      } else {
+        triggerStun(4);
+      }
+    }
+
+    function triggerStun(seconds) {
+      isStunned = true;
       const overlay = document.getElementById('stunOverlay');
-      const secText = document.getElementById('stunSeconds');
+      const countEl = document.getElementById('stunCount');
       overlay.classList.remove('hidden');
 
-      let remaining = 5;
-      secText.textContent = remaining;
+      let remaining = seconds;
+      countEl.innerText = remaining;
 
-      const countdown = setInterval(() => {
+      const timer = setInterval(() => {
         remaining--;
-        secText.textContent = remaining;
+        countEl.innerText = remaining;
         if (remaining <= 0) {
-          clearInterval(countdown);
-          APP.stunned = false;
+          clearInterval(timer);
           overlay.classList.add('hidden');
+          isStunned = false;
         }
       }, 1000);
-
-      document.getElementById('myStatusText').textContent = `🛡️ 無法整除！彈刀冷卻中！`;
-      document.getElementById('myStatusText').className = 'text-xs text-center py-1 mt-2 rounded-lg bg-rose-950 text-rose-300 font-bold border border-rose-500/50 shrink-0';
     }
 
-    /* 處理對手斬擊 */
-    function handleOpponentSlash(prime, newVal) {
-      APP.oppVal = newVal;
-      APP.oppSteps.push(prime);
-      document.getElementById('oppTargetText').textContent = newVal;
+    function triggerGameOver(isWinner, finalGcd, finalLcm, endA, endB, factors) {
+      gameOver = true;
+      const modal = document.getElementById('resultModal');
+      const title = document.getElementById('resultTitle');
+      const desc = document.getElementById('resultDesc');
+      const icon = document.getElementById('resultIcon');
 
-      const stepsHtml = APP.oppSteps.map(p => `<span class="bg-indigo-950 border border-indigo-700 text-cyan-300 px-1 rounded">${p}</span>`).join(' → ');
-      document.getElementById('oppMiniSteps').innerHTML = stepsHtml;
-    }
+      document.getElementById('summaryInitNums').innerText = `[ ${initA}, ${initB} ]`;
+      document.getElementById('summaryFactorList').innerText = factors && factors.length > 0 ? factors.join(' × ') : '無 (兩數原已互質)';
+      document.getElementById('summaryRemain').innerText = `[ ${endA}, ${endB} ]`;
+      document.getElementById('summaryGcd').innerText = finalGcd;
+      document.getElementById('summaryLcm').innerText = finalLcm;
 
-    /* 我方獲勝 */
-    function triggerMyVictory() {
-      APP.isEnded = true;
-      if (APP.aiTimer) clearInterval(APP.aiTimer);
-      playSfx('win');
-
-      APP.myScore++;
-      document.getElementById('myScoreText').textContent = APP.myScore;
-
-      const allFactors = [...APP.mySteps.map(s => s.divisor), APP.myVal].sort((a,b)=>a-b);
-      document.getElementById('winFactorResult').innerHTML = `${APP.targetNumber} = ${formatStandard(allFactors)}`;
-
-      if (APP.conn && APP.conn.open) {
-        APP.conn.send({ type: 'OPP_WIN', factors: allFactors });
+      if (isWinner) {
+        icon.innerText = "🏆";
+        title.innerText = "對決獲勝！";
+        title.className = "text-2xl font-black text-amber-400 mb-1";
+        desc.innerText = "精準洞悉互質時機，成功終結雙子怪！";
+        try { confetti({ particleCount: 120, spread: 80, origin: { y: 0.6 } }); } catch(e){}
+      } else {
+        icon.innerText = "💀";
+        title.innerText = "對決落敗！";
+        title.className = "text-2xl font-black text-rose-500 mb-1";
+        desc.innerText = "對手搶先看出互質並完成斬殺！";
       }
 
-      document.getElementById('winScreen').classList.remove('hidden');
-      startFireworks();
+      modal.classList.remove('hidden');
     }
 
-    /* 對手獲勝 (我方落敗) */
-    function handleOpponentWin(factors) {
-      APP.isEnded = true;
-      if (APP.aiTimer) clearInterval(APP.aiTimer);
-      playSfx('punch');
+    function requestRematch(e) {
+      if (e) e.preventDefault();
+      const btn = document.getElementById('btnRematch');
+      const statusEl = document.getElementById('rematchStatus');
 
-      APP.oppScore++;
-      document.getElementById('oppScoreText').textContent = APP.oppScore;
+      rematchRequestedByMe = true;
+      btn.disabled = true;
+      btn.classList.add('opacity-50', 'cursor-not-allowed');
+      btn.innerText = "等待對手中...";
 
-      document.getElementById('loseFactorResult').innerHTML = `${APP.targetNumber} = ${formatStandard(factors)}`;
-      document.getElementById('loseScreen').classList.remove('hidden');
+      if (conn && conn.open) {
+        conn.send({ type: 'REMATCH_REQUEST' });
+      }
 
-      // 拳套重擊動畫與震動
-      document.body.classList.remove('anim-shake');
-      void document.body.offsetWidth;
-      document.body.classList.add('anim-shake');
-    }
-
-    /* 休兵顯示 */
-    function showPauseScreen() {
-      document.getElementById('winScreen').classList.add('hidden');
-      document.getElementById('loseScreen').classList.add('hidden');
-      document.getElementById('rematchConfirmModal').classList.add('hidden');
-      document.getElementById('pauseScreen').classList.remove('hidden');
-    }
-
-    /* 單機 AI 行為 */
-    function runAiTurn() {
-      if (APP.isEnded) return;
-      const validPrimes = [2, 3, 5, 7].filter(p => canCut(APP.oppVal, p));
-      if (validPrimes.length > 0) {
-        const pick = validPrimes[Math.floor(Math.random() * validPrimes.length)];
-        handleOpponentSlash(pick, APP.oppVal / pick);
-        if (isPrime(APP.oppVal)) {
-          const factors = [...APP.oppSteps, APP.oppVal].sort((a,b)=>a-b);
-          handleOpponentWin(factors);
-        }
+      if (rematchRequestedByPeer) {
+        statusEl.innerText = "雙方同意，準備開局...";
+        checkAndLaunchRematch();
+      } else {
+        statusEl.innerText = "已送出邀請，等待對手點擊同意...";
       }
     }
 
-    /* 滿版煙火特效 Canvas */
-    function startFireworks() {
-      const canvas = document.getElementById('fireworksCanvas');
-      const ctx = canvas.getContext('2d');
-      canvas.width = window.innerWidth;
-      canvas.height = window.innerHeight;
+    function handleRematchRequest() {
+      rematchRequestedByPeer = true;
+      const statusEl = document.getElementById('rematchStatus');
+      const btn = document.getElementById('btnRematch');
 
-      const particles = [];
-      const colors = ['#f59e0b', '#ec4899', '#3b82f6', '#10b981', '#8b5cf6'];
-
-      for (let i = 0; i < 70; i++) {
-        particles.push({
-          x: canvas.width / 2,
-          y: canvas.height / 2,
-          vx: (Math.random() - 0.5) * 12,
-          vy: (Math.random() - 0.5) * 12,
-          color: colors[Math.floor(Math.random() * colors.length)],
-          alpha: 1,
-          size: Math.random() * 4 + 2
-        });
+      if (rematchRequestedByMe) {
+        statusEl.innerText = "雙方同意，準備開局...";
+        checkAndLaunchRematch();
+      } else {
+        statusEl.innerText = "🔥 對手邀請再來一局！請點擊同意";
+        btn.classList.add('ring-2', 'ring-amber-400', 'animate-pulse');
+        btn.innerText = "同意再來一局";
       }
-
-      function animate() {
-        if (document.getElementById('winScreen').classList.contains('hidden')) return;
-        ctx.clearRect(0, 0, canvas.width, canvas.height);
-        particles.forEach(p => {
-          p.x += p.vx;
-          p.y += p.vy;
-          p.alpha -= 0.012;
-          ctx.globalAlpha = Math.max(0, p.alpha);
-          ctx.fillStyle = p.color;
-          ctx.beginPath();
-          ctx.arc(p.x, p.y, p.size, 0, Math.PI * 2);
-          ctx.fill();
-        });
-        if (particles.some(p => p.alpha > 0)) {
-          requestAnimationFrame(animate);
-        }
-      }
-      animate();
     }
 
-    /* 事件綁定 */
-    // 創房按鈕
-    document.getElementById('createRoomBtn').addEventListener('click', () => {
-      initAudio();
-      APP.isHost = true;
-      APP.isSolo = false;
-      const code = Math.floor(1000 + Math.random() * 9000).toString(); // 純 4 位數
-      initHostPeer(code);
-    });
-
-    // 加入按鈕 (純數字輸入相容)
-    document.getElementById('joinRoomBtn').addEventListener('click', () => {
-      initAudio();
-      const input = document.getElementById('joinCodeInput');
-      const code = input.value.trim();
-      if (code.length !== 4) {
-        showToast('請輸入完整的 4 位數代號！');
-        return;
+    function checkAndLaunchRematch() {
+      if (isHost) {
+        const q = generateRandomGcdQuestion();
+        setTimeout(() => {
+          if (conn && conn.open) {
+            conn.send({ type: 'REMATCH_START', q: q });
+          }
+          document.getElementById('resultModal').classList.add('hidden');
+          startGame(q[0], q[1]);
+        }, 600);
       }
-      APP.isHost = false;
-      APP.isSolo = false;
-      joinRoom(code);
-    });
+    }
 
-    // 單機模式按鈕
-    document.getElementById('soloBtn').addEventListener('click', () => {
-      initAudio();
-      APP.isSolo = true;
-      APP.isHost = true;
-      APP.targetNumber = QUESTION_POOL[Math.floor(Math.random() * QUESTION_POOL.length)];
-      startGame();
-    });
-
-    // 出劍按鈕 (相容觸控與點擊)
-    document.querySelectorAll('.sword-btn').forEach(btn => {
-      btn.addEventListener('pointerdown', (e) => {
-        e.preventDefault();
-        const prime = parseInt(btn.getAttribute('data-prime'), 10);
-        applyMySlash(prime);
-      });
-    });
-
-    // 再戰協議
-    document.getElementById('rematchBtnWin').addEventListener('click', () => {
-      if (APP.isSolo) {
-        APP.targetNumber = QUESTION_POOL[Math.floor(Math.random() * QUESTION_POOL.length)];
-        startGame();
-      } else if (APP.conn && APP.conn.open) {
-        document.getElementById('rematchWaitingWin').classList.remove('hidden');
-        APP.conn.send({ type: 'REMATCH_REQ' });
-      }
-    });
-
-    document.getElementById('rematchBtnLose').addEventListener('click', () => {
-      if (APP.isSolo) {
-        APP.targetNumber = QUESTION_POOL[Math.floor(Math.random() * QUESTION_POOL.length)];
-        startGame();
-      } else if (APP.conn && APP.conn.open) {
-        document.getElementById('rematchWaitingLose').classList.remove('hidden');
-        APP.conn.send({ type: 'REMATCH_REQ' });
-      }
-    });
-
-    document.getElementById('acceptRematchBtn').addEventListener('click', () => {
-      if (APP.conn && APP.conn.open) {
-        APP.conn.send({ type: 'REMATCH_ACCEPT' });
-        if (APP.isHost) {
-          APP.targetNumber = QUESTION_POOL[Math.floor(Math.random() * QUESTION_POOL.length)];
-          APP.conn.send({ type: 'START_GAME', target: APP.targetNumber });
-          startGame();
-        }
-      }
-    });
-
-    document.getElementById('declineRematchBtn').addEventListener('click', () => {
-      if (APP.conn && APP.conn.open) {
-        APP.conn.send({ type: 'REMATCH_PAUSE' });
-      }
-      showPauseScreen();
-    });
-
-    document.getElementById('resumeBattleBtn').addEventListener('click', () => {
-      if (APP.isSolo) {
-        APP.targetNumber = QUESTION_POOL[Math.floor(Math.random() * QUESTION_POOL.length)];
-        startGame();
-      } else if (APP.conn && APP.conn.open) {
-        APP.conn.send({ type: 'REMATCH_REQ' });
-        showToast('已向對手發送開戰邀請！');
-      }
-    });
-
-    document.getElementById('exitBattleBtn').addEventListener('click', () => location.reload());
-    document.getElementById('pauseExitBtn').addEventListener('click', () => location.reload());
+    function leaveToLobby() {
+      window.location.reload();
+    }
   </script>
 </body>
 </html>
