@@ -187,8 +187,8 @@
         <button type="button" id="btnRematch" onclick="requestRematch(event)" class="flex-1 py-3 bg-indigo-600 hover:bg-indigo-500 rounded-xl font-bold text-sm active:scale-95 transition-all">
           再來一局
         </button>
-        <button type="button" onclick="leaveToLobby()" class="px-4 py-3 bg-slate-700 hover:bg-slate-600 rounded-xl font-bold text-sm text-slate-300 active:scale-95 transition-all">
-          回大廳
+        <button type="button" onclick="leaveToHome()" class="px-4 py-3 bg-slate-700 hover:bg-slate-600 rounded-xl font-bold text-sm text-slate-300 active:scale-95 transition-all">
+          回主選單
         </button>
       </div>
     </div>
@@ -499,8 +499,9 @@
       }
     }
 
-    function leaveToLobby() {
-      window.location.reload();
+    // 回主選單（index.html）
+    function leaveToHome() {
+      window.location.href = './index.html';
     }
   </script>
 </body>
