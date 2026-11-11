@@ -28,22 +28,22 @@
   </header>
 
   <!-- 1. 模式選擇大廳 -->
-  <main id="modeSelectScreen" class="w-full max-w-sm flex-1 flex flex-col justify-center items-center gap-4 my-auto">
+  <main id="modeSelectScreen" class="w-full max-w-sm flex-1 flex flex-col justify-center items-center gap-3.5 my-auto">
     <div class="text-center">
-      <div class="text-4xl mb-2">🗡️</div>
+      <div class="text-4xl mb-1">🗡️</div>
       <h2 class="text-xl font-black text-amber-400">地牢試煉領域</h2>
-      <p class="text-xs text-slate-400 mt-1">磨練質因數心算神技，選擇你的修行模式！</p>
+      <p class="text-xs text-slate-400 mt-0.5">磨練質因數心算神技，選擇你的修行模式！</p>
     </div>
 
     <!-- 模式卡片：五關競速試煉 -->
     <button type="button" onclick="startFiveStagesMode()" class="w-full bg-slate-800/90 hover:bg-slate-800 active:scale-95 border-2 border-indigo-500/50 hover:border-indigo-400 p-4 rounded-2xl flex flex-col text-left transition-all shadow-lg">
       <div class="flex items-center justify-between w-full mb-1">
         <span class="text-base font-black text-indigo-400 flex items-center gap-1.5">
-          <span>👑</span> 五關競速試煉
+          <span>👑</span> 五關進階試煉
         </span>
-        <span class="text-[10px] bg-indigo-950/80 text-indigo-300 border border-indigo-700 px-2 py-0.5 rounded-full font-bold">階梯闖關</span>
+        <span class="text-[10px] bg-indigo-950/80 text-indigo-300 border border-indigo-700 px-2 py-0.5 rounded-full font-bold">難度升級</span>
       </div>
-      <p class="text-xs text-slate-300">擊破 B1~B5 五層魔物（含 11 質數考驗），爭奪最速 S 級段位！</p>
+      <p class="text-xs text-slate-300">擊破 B1~B5 階梯首領（考驗 2、3、5、7 與終極 11），爭奪最速 S 級段位！</p>
     </button>
 
     <!-- 模式卡片：無盡深淵生存 -->
@@ -54,7 +54,7 @@
         </span>
         <span class="text-[10px] bg-rose-950/80 text-rose-300 border border-rose-700 px-2 py-0.5 rounded-full font-bold">極限狂暴</span>
       </div>
-      <p class="text-xs text-slate-300">初始 20 秒倒數！前 10 隻擊破僅補 1 秒，步步緊逼的極限斬擊！</p>
+      <p class="text-xs text-slate-300">初始 30 秒倒數！前 10 隻擊破僅補 1 秒，後續加時遞減，挑戰最高連斬！</p>
     </button>
 
     <!-- 本地英雄榜預覽 -->
@@ -74,6 +74,12 @@
         </div>
       </div>
     </div>
+
+    <!-- 返回起始畫面 (回到 index.html) -->
+    <a href="./index.html" class="w-full py-2.5 bg-slate-800 hover:bg-slate-700 active:scale-95 border border-slate-700 rounded-xl font-bold text-xs text-slate-300 text-center transition-all flex items-center justify-center gap-1.5">
+      <span>🏠</span>
+      <span>返回遊戲大廳 (選擇單人/雙人)</span>
+    </a>
   </main>
 
   <!-- 2. 戰鬥畫面 (預設隱藏) -->
@@ -201,13 +207,13 @@
 
     let currentMode = 'STAGES';
 
-    // 五關關卡固定配置 (明確因子抽樣數量，確保 100% 產出漂亮合數)
+    // 五關關卡難度升級配置 (提高刀數與組合寬度)
     const FIVE_STAGES = [
-      { floor: 'B1', name: 'B1 史萊姆', icon: '🟢', desc: '基礎暖身：2、3 的小倍數', pool: [2, 2, 2, 3, 3], cuts: 2 },
-      { floor: 'B2', name: 'B2 骷髏兵', icon: '💀', desc: '倍數混合：加入 5 的因數', pool: [2, 3, 5], cuts: 3 },
-      { floor: 'B3', name: 'B3 哥布林精銳', icon: '👺', desc: '進階考驗：加入 7 的質因數', pool: [2, 3, 5, 7], cuts: 3 },
-      { floor: 'B4', name: 'B4 石巨人領主', icon: '🗿', desc: '巨額血量：多重質因數混搭', pool: [2, 3, 5, 7], cuts: 4 },
-      { floor: 'B5', name: 'B5 深淵黑龍王', icon: '🐲', desc: '極限首領：必含 11 奇偶位差考驗', pool: [2, 3, 5, 7], cuts: 3, mustInclude: 11 }
+      { floor: 'B1', name: 'B1 史萊姆', icon: '🟢', desc: '基礎熱身：2、3 質因數組合 (3 刀)', pool: [2, 2, 3, 3], cuts: 3 },
+      { floor: 'B2', name: 'B2 骷髏兵', icon: '💀', desc: '倍數混合：加入 5 的因數 (3~4 刀)', pool: [2, 3, 5], cuts: 3 },
+      { floor: 'B3', name: 'B3 哥布林精銳', icon: '👺', desc: '進階考驗：加入 7 的質因數 (3~4 刀)', pool: [2, 3, 5, 7], cuts: 4 },
+      { floor: 'B4', name: 'B4 石巨人領主', icon: '🗿', desc: '巨額血量：多重質因數混搭 (4~5 刀)', pool: [2, 2, 3, 3, 5, 7], cuts: 4 },
+      { floor: 'B5', name: 'B5 深淵黑龍王', icon: '🐲', desc: '極限首領：必含 11 奇偶位差考驗 (4 刀)', pool: [2, 3, 5, 7], cuts: 4, mustInclude: 11 }
     ];
 
     let stageIndex = 0;
@@ -215,33 +221,44 @@
     let currentInitHp = 24;
     let stageFactors = [];
     let stagesRecord = [];
+    let lastGeneratedHp = null; // 紀錄上一隻怪獸血量，防止連續重複
 
     // 無盡模式狀態
     let endlessKills = 0;
     let currentCombo = 0;
     let maxCombo = 0;
-    let endlessTimeRemaining = 20.0; // 緊湊的 20 秒初始倒數
+    let endlessTimeRemaining = 30.0; // 調整為 30 秒初始倒數
 
     let timerInterval = null;
     let speedStartTime = null;
     let isTimerRunning = false;
     let isStunned = false;
 
-    // 安全、可靠的質因數相乘演算法
+    // 安全、可靠且【絕不連續重複】的質因數相乘演算法
     function generateHpByFactors(pool, count, mustInclude = null) {
-      let factors = [];
-      if (mustInclude) {
-        factors.push(mustInclude);
+      let resultHp = 0;
+      for (let attempt = 0; attempt < 30; attempt++) {
+        let factors = [];
+        if (mustInclude) {
+          factors.push(mustInclude);
+        }
+        while (factors.length < count) {
+          factors.push(pool[Math.floor(Math.random() * pool.length)]);
+        }
+        resultHp = factors.reduce((acc, v) => acc * v, 1);
+        
+        // 若與上一隻相同且還可以重試，就重新抽選
+        if (resultHp !== lastGeneratedHp) {
+          break;
+        }
       }
-      while (factors.length < count) {
-        factors.push(pool[Math.floor(Math.random() * pool.length)]);
-      }
-      return factors.reduce((acc, v) => acc * v, 1);
+      lastGeneratedHp = resultHp;
+      return resultHp;
     }
 
     // 依指定規則分配無盡加時：前 10 隻 1.0 秒，後續階段遞減
     function getEndlessBonusTime(kills) {
-      if (kills < 10) return 1.0; // 前 10 隻各補 1 秒
+      if (kills < 10) return 1.0; // 前 10 隻各補 1.0 秒
       if (kills < 20) return 0.7; // 11~20 隻各補 0.7 秒
       if (kills < 30) return 0.4; // 21~30 隻各補 0.4 秒
       return 0.2;                 // 31 隻以上極限生存每隻 0.2 秒
@@ -284,6 +301,7 @@
       currentMode = 'STAGES';
       stageIndex = 0;
       stagesRecord = [];
+      lastGeneratedHp = null;
       isTimerRunning = false;
       clearInterval(timerInterval);
 
@@ -334,7 +352,8 @@
       endlessKills = 0;
       currentCombo = 0;
       maxCombo = 0;
-      endlessTimeRemaining = 20.0;
+      lastGeneratedHp = null;
+      endlessTimeRemaining = 30.0; // 30 秒初始倒數
       isTimerRunning = false;
       clearInterval(timerInterval);
 
@@ -358,7 +377,7 @@
 
     function loadEndlessMonster() {
       let pool = [2, 2, 3, 3, 5];
-      let cuts = 2;
+      let cuts = 3; // 起手給予 3 刀難度
       let mustInclude = null;
 
       // 隨擊殺數階梯提升難度
@@ -366,8 +385,8 @@
         pool.push(7);
         cuts = 3;
       }
-      if (endlessKills >= 12) {
-        pool.push(11);
+      if (endlessKills >= 10) {
+        pool.push(7, 11);
         cuts = 4;
         if (Math.random() > 0.4) mustInclude = 11;
       }
@@ -455,7 +474,6 @@
               finishStagesGame();
             }
           } else {
-            // 套用嚴格的加時遞減公式
             const bonus = getEndlessBonusTime(endlessKills);
             endlessKills++;
             endlessTimeRemaining += bonus;
@@ -497,12 +515,13 @@
       const totalTime = ((performance.now() - speedStartTime) / 1000).toFixed(2);
       const secNum = parseFloat(totalTime);
 
+      // 難度調升後的評級門檻 (45s內S級, 70s內A級, 100s內B級)
       let tier = "S 級", title = "神速・質因數劍豪", icon = "⚡", color = "text-amber-400";
-      if (secNum >= 80.0) {
+      if (secNum >= 100.0) {
         tier = "C 級"; title = "頑強・見習生"; icon = "🩹"; color = "text-slate-400";
-      } else if (secNum >= 55.0) {
+      } else if (secNum >= 70.0) {
         tier = "B 級"; title = "熟練・冒險者"; icon = "🛡️"; color = "text-indigo-400";
-      } else if (secNum >= 35.0) {
+      } else if (secNum >= 45.0) {
         tier = "A 級"; title = "精銳・地牢先鋒"; icon = "🗡️"; color = "text-emerald-400";
       }
 
