@@ -3,6 +3,9 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+  <meta http-equiv="Pragma" content="no-cache">
+  <meta http-equiv="Expires" content="0">
   <title>地牢切怪 - 質因數雙人對決</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <script src="https://unpkg.com/peerjs@1.5.2/dist/peerjs.min.js"></script>
@@ -164,6 +167,13 @@
   </footer>
 
   <script>
+    // 破除 BFCache 快取：偵測若是從快取載入，強制整頁刷新
+    window.addEventListener('pageshow', function(event) {
+      if (event.persisted) {
+        window.location.reload();
+      }
+    });
+
     let peer = null;
     let conn = null;
     let isHost = false;
@@ -179,13 +189,12 @@
     // 動態隨機生成質因數題目（2, 3, 5, 7, 11 組合，砍 3~4 刀）
     function generateRandomQuestion() {
       const primePool = [2, 2, 2, 3, 3, 3, 5, 5, 7, 11];
-      const count = Math.floor(Math.random() * 2) + 3; // 3 到 4 個質因數
+      const count = Math.floor(Math.random() * 2) + 3;
       let hp = 1;
       for (let i = 0; i < count; i++) {
         const p = primePool[Math.floor(Math.random() * primePool.length)];
         hp *= p;
       }
-      // 控制在 1500 以內避免過難
       if (hp > 1500 || hp < 20) {
         return generateRandomQuestion();
       }
@@ -329,7 +338,6 @@
           conn.send({ type: 'PROGRESS', hp: myHp });
         }
 
-        // 削至 1 代表完全質因數分解完成
         if (myHp === 1) {
           if (conn && conn.open) {
             conn.send({ type: 'WIN', factors: myFactors });
