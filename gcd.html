@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-  <title>地牢切怪 - 公因數雙人對決</title>
+  <title>地牢切怪 - 公因數公倍數雙人對決</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <script src="https://unpkg.com/peerjs@1.5.2/dist/peerjs.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
@@ -26,12 +26,12 @@
     <div class="text-center">
       <div class="text-4xl mb-2">⚔️</div>
       <h2 class="text-xl font-black text-amber-400">雙子魔物・公因數對決</h2>
-      <p class="text-xs text-slate-400 mt-1">找出能「同時整除」兩隻怪獸的神劍，砍到互質時發動斬殺！</p>
+      <p class="text-xs text-slate-400 mt-1">抽出兩數的共同質因數，一路切到互質並搶先斬殺！</p>
     </div>
 
     <!-- 開房區塊 -->
     <div class="w-full bg-slate-800/80 p-4 rounded-2xl border border-slate-700 flex flex-col gap-3">
-      <button id="btnCreateRoom" onclick="createRoom()" class="w-full py-3 bg-indigo-600 hover:bg-indigo-500 rounded-xl font-bold text-sm tracking-wide shadow-lg active:scale-95 transition-all">
+      <button type="button" id="btnCreateRoom" onclick="createRoom()" class="w-full py-3 bg-indigo-600 hover:bg-indigo-500 rounded-xl font-bold text-sm tracking-wide shadow-lg active:scale-95 transition-all">
         🏠 建立房間（產生 4 碼）
       </button>
       <div id="createStatus" class="text-xs text-center text-amber-300 font-mono hidden"></div>
@@ -45,7 +45,7 @@
       <div class="flex gap-2">
         <input id="inputRoomCode" type="text" maxlength="4" placeholder="例如: 8821" 
           class="flex-1 bg-slate-900 border border-slate-600 rounded-xl px-3 py-2 text-center text-lg font-bold font-mono tracking-widest uppercase focus:outline-none focus:border-amber-400">
-        <button onclick="joinRoom()" class="px-5 py-2 bg-emerald-600 hover:bg-emerald-500 rounded-xl font-bold text-sm active:scale-95 transition-all">
+        <button type="button" onclick="joinRoom()" class="px-5 py-2 bg-emerald-600 hover:bg-emerald-500 rounded-xl font-bold text-sm active:scale-95 transition-all">
           加入
         </button>
       </div>
@@ -67,9 +67,7 @@
 
     <!-- 本地雙子怪中央顯示區 -->
     <div class="relative bg-slate-800 rounded-2xl border-2 border-slate-700 p-4 flex flex-col items-center justify-center my-2 shadow-inner">
-      <div class="text-xs text-slate-400 font-medium mb-1 flex items-center gap-1">
-        <span>雙子怪核心數值</span>
-      </div>
+      <div class="text-xs text-slate-400 font-medium mb-1">雙子怪核心數值</div>
 
       <!-- 兩個數字並列 -->
       <div class="flex items-center justify-center gap-3 my-2 w-full">
@@ -100,47 +98,76 @@
 
     <!-- 終結技：互質斬殺大按鈕 -->
     <div class="w-full mb-2">
-      <button id="btnCoprime" onclick="claimCoprime()" class="w-full py-3 bg-gradient-to-r from-amber-500 via-rose-500 to-amber-500 bg-pos-0 hover:bg-pos-100 rounded-xl font-black text-base tracking-wider text-white shadow-lg shadow-rose-950/50 border border-amber-300 active:scale-95 transition-all">
+      <button type="button" id="btnCoprime" onclick="claimCoprime()" class="w-full py-3 bg-gradient-to-r from-amber-500 via-rose-500 to-amber-500 rounded-xl font-black text-base tracking-wider text-white shadow-lg shadow-rose-950/50 border border-amber-300 active:scale-95 transition-all">
         ⚡ 雙數互質！發動終結斬殺
       </button>
       <p class="text-[10px] text-slate-400 text-center mt-1">※ 注意：若仍有大於 1 的公因數卻按下，將被重罰凍結 4 秒！</p>
     </div>
 
-    <!-- 下方神劍操作面板 (2, 3, 5, 7) -->
-    <div class="grid grid-cols-4 gap-2 w-full">
-      <button onclick="slash(2)" class="slash-btn py-3.5 bg-slate-800 hover:bg-slate-700 active:scale-90 border-2 border-indigo-500/50 rounded-xl flex flex-col items-center justify-center transition-all">
-        <span class="text-[10px] text-indigo-300 font-semibold">神劍</span>
-        <span class="text-2xl font-black text-indigo-400 font-mono">2</span>
+    <!-- 下方神劍操作面板 (擴充為 5 顆：2, 3, 5, 7, 11) -->
+    <div class="grid grid-cols-5 gap-1.5 w-full">
+      <button type="button" onclick="slash(2)" class="slash-btn py-3 bg-slate-800 hover:bg-slate-700 active:scale-90 border-2 border-indigo-500/50 rounded-xl flex flex-col items-center justify-center transition-all">
+        <span class="text-[9px] text-indigo-300 font-semibold">神劍</span>
+        <span class="text-xl font-black text-indigo-400 font-mono">2</span>
       </button>
-      <button onclick="slash(3)" class="slash-btn py-3.5 bg-slate-800 hover:bg-slate-700 active:scale-90 border-2 border-emerald-500/50 rounded-xl flex flex-col items-center justify-center transition-all">
-        <span class="text-[10px] text-emerald-300 font-semibold">神劍</span>
-        <span class="text-2xl font-black text-emerald-400 font-mono">3</span>
+      <button type="button" onclick="slash(3)" class="slash-btn py-3 bg-slate-800 hover:bg-slate-700 active:scale-90 border-2 border-emerald-500/50 rounded-xl flex flex-col items-center justify-center transition-all">
+        <span class="text-[9px] text-emerald-300 font-semibold">神劍</span>
+        <span class="text-xl font-black text-emerald-400 font-mono">3</span>
       </button>
-      <button onclick="slash(5)" class="slash-btn py-3.5 bg-slate-800 hover:bg-slate-700 active:scale-90 border-2 border-amber-500/50 rounded-xl flex flex-col items-center justify-center transition-all">
-        <span class="text-[10px] text-amber-300 font-semibold">神劍</span>
-        <span class="text-2xl font-black text-amber-400 font-mono">5</span>
+      <button type="button" onclick="slash(5)" class="slash-btn py-3 bg-slate-800 hover:bg-slate-700 active:scale-90 border-2 border-amber-500/50 rounded-xl flex flex-col items-center justify-center transition-all">
+        <span class="text-[9px] text-amber-300 font-semibold">神劍</span>
+        <span class="text-xl font-black text-amber-400 font-mono">5</span>
       </button>
-      <button onclick="slash(7)" class="slash-btn py-3.5 bg-slate-800 hover:bg-slate-700 active:scale-90 border-2 border-rose-500/50 rounded-xl flex flex-col items-center justify-center transition-all">
-        <span class="text-[10px] text-rose-300 font-semibold">神劍</span>
-        <span class="text-2xl font-black text-rose-400 font-mono">7</span>
+      <button type="button" onclick="slash(7)" class="slash-btn py-3 bg-slate-800 hover:bg-slate-700 active:scale-90 border-2 border-rose-500/50 rounded-xl flex flex-col items-center justify-center transition-all">
+        <span class="text-[9px] text-rose-300 font-semibold">神劍</span>
+        <span class="text-xl font-black text-rose-400 font-mono">7</span>
+      </button>
+      <button type="button" onclick="slash(11)" class="slash-btn py-3 bg-slate-800 hover:bg-slate-700 active:scale-90 border-2 border-cyan-500/50 rounded-xl flex flex-col items-center justify-center transition-all">
+        <span class="text-[9px] text-cyan-300 font-semibold">神劍</span>
+        <span class="text-xl font-black text-cyan-400 font-mono">11</span>
       </button>
     </div>
 
   </main>
 
-  <!-- 結算彈窗 (支援雙向確認再來一局) -->
-  <div id="resultModal" class="fixed inset-0 bg-slate-950/90 backdrop-blur-md flex items-center justify-center p-4 hidden z-50">
-    <div class="max-w-xs w-full bg-slate-800 border-2 border-slate-700 rounded-3xl p-5 text-center flex flex-col items-center shadow-2xl">
-      <div id="resultIcon" class="text-5xl mb-2">🏆</div>
+  <!-- 放大版結算彈窗 -->
+  <div id="resultModal" class="fixed inset-0 bg-slate-950/90 backdrop-blur-md flex items-center justify-center p-3 hidden z-50">
+    <div class="max-w-sm w-full bg-slate-800 border-2 border-slate-700 rounded-3xl p-6 text-center flex flex-col items-center shadow-2xl">
+      <div id="resultIcon" class="text-6xl mb-2">🏆</div>
       <h3 id="resultTitle" class="text-2xl font-black text-amber-400 mb-1">獲得勝利！</h3>
-      <p id="resultDesc" class="text-xs text-slate-300 mb-4">你最先達成互質並完成斬殺！</p>
+      <p id="resultDesc" class="text-xs text-slate-300 mb-4">精準判斷互質時機，成功發動斬殺！</p>
 
-      <!-- 數學概念回顧 -->
-      <div class="w-full bg-slate-900/90 rounded-xl p-3 border border-slate-700 text-left text-xs space-y-1 font-mono mb-4">
-        <div class="text-slate-400 text-[10px]">【本題短除法總結】</div>
-        <div>題目數值: <span id="summaryInitNums" class="text-amber-300 font-bold"></span></div>
-        <div>最大公因數 GCD: <span id="summaryGcd" class="text-emerald-400 font-bold"></span></div>
-        <div>最後互質商數: <span id="summaryRemain" class="text-slate-300 font-bold"></span></div>
+      <!-- 放大版數學短除法回顧區塊 -->
+      <div class="w-full bg-slate-900/90 rounded-2xl p-4 border border-slate-700 text-left text-sm space-y-2 font-mono mb-5 shadow-inner">
+        <div class="text-amber-400/90 text-xs font-bold border-b border-slate-700/60 pb-1 flex justify-between items-center">
+          <span>短除法結算教學分析</span>
+          <span class="text-[10px] text-slate-500">標準分解</span>
+        </div>
+        
+        <div class="flex justify-between items-center text-xs">
+          <span class="text-slate-400">題目原始數值：</span>
+          <span id="summaryInitNums" class="text-amber-300 font-black text-sm"></span>
+        </div>
+
+        <div class="flex justify-between items-center text-xs">
+          <span class="text-slate-400">抽出公因數：</span>
+          <span id="summaryFactorList" class="text-cyan-300 font-bold"></span>
+        </div>
+
+        <div class="flex justify-between items-center text-xs">
+          <span class="text-slate-400">最後互質商數：</span>
+          <span id="summaryRemain" class="text-slate-300 font-bold"></span>
+        </div>
+
+        <div class="pt-1 border-t border-slate-800 flex justify-between items-center">
+          <span class="text-emerald-400 font-bold">最大公因數 (GCD)：</span>
+          <span id="summaryGcd" class="text-emerald-400 font-black text-base"></span>
+        </div>
+
+        <div class="flex justify-between items-center">
+          <span class="text-indigo-400 font-bold">最小公倍數 (LCM)：</span>
+          <span id="summaryLcm" class="text-indigo-400 font-black text-base"></span>
+        </div>
       </div>
 
       <!-- 再戰提示狀態 -->
@@ -148,10 +175,10 @@
 
       <!-- 按鈕群 -->
       <div class="flex gap-2 w-full">
-        <button id="btnRematch" onclick="requestRematch()" class="flex-1 py-3 bg-indigo-600 hover:bg-indigo-500 rounded-xl font-bold text-sm active:scale-95 transition-all">
+        <button type="button" id="btnRematch" onclick="requestRematch(event)" class="flex-1 py-3 bg-indigo-600 hover:bg-indigo-500 rounded-xl font-bold text-sm active:scale-95 transition-all">
           再來一局
         </button>
-        <button onclick="location.reload()" class="px-4 py-3 bg-slate-700 hover:bg-slate-600 rounded-xl font-bold text-sm text-slate-300 active:scale-95 transition-all">
+        <button type="button" onclick="leaveToLobby()" class="px-4 py-3 bg-slate-700 hover:bg-slate-600 rounded-xl font-bold text-sm text-slate-300 active:scale-95 transition-all">
           回大廳
         </button>
       </div>
@@ -159,41 +186,66 @@
   </div>
 
   <footer class="w-full text-center py-1 text-[10px] text-slate-500">
-    PeerJS P2P Dual GCD Engine
+    PeerJS P2P Dual GCD & LCM Engine
   </footer>
 
   <script>
-    // 題庫設計：[numA, numB]
-    const QUESTION_POOL = [
-      [24, 36], [36, 48], [48, 72], [60, 90],
-      [72, 108], [84, 126], [40, 100], [45, 75],
-      [56, 84], [90, 120], [120, 180], [140, 210]
-    ];
-
     let peer = null;
     let conn = null;
+    let isHost = false;
     let myA = 0, myB = 0;
     let initA = 0, initB = 0;
     let myFactors = [];
     let isStunned = false;
     let gameOver = false;
 
-    // 再戰控制標記
     let rematchRequestedByMe = false;
     let rematchRequestedByPeer = false;
 
-    // 工具：求兩數最大公因數 (歐幾里得輾轉相除法)
+    // 歐幾里得輾轉相除法求 GCD
     function calcGcd(a, b) {
       return b === 0 ? a : calcGcd(b, a % b);
     }
 
-    // 產生 4 碼 Peer ID
+    // 題目動態隨機生成（包含 2, 3, 5, 7, 11）
+    function generateRandomGcdQuestion() {
+      // 隨機池：加重 2, 3, 5 比重，適量出現 7 與 11
+      const primePool = [2, 2, 2, 3, 3, 3, 5, 5, 7, 11];
+      
+      // 隨機抽 2 ~ 3 個質數相乘作為最大公因數
+      const count = Math.floor(Math.random() * 2) + 2;
+      let gcdBase = 1;
+      for (let i = 0; i < count; i++) {
+        const p = primePool[Math.floor(Math.random() * primePool.length)];
+        gcdBase *= p;
+      }
+
+      // 挑選互質的小商數對
+      const coprimePairs = [
+        [1, 2], [1, 3], [1, 4], [1, 5],
+        [2, 3], [2, 5], [2, 7],
+        [3, 4], [3, 5], [3, 7],
+        [4, 5], [5, 6]
+      ];
+      const pair = coprimePairs[Math.floor(Math.random() * coprimePairs.length)];
+
+      const a = gcdBase * pair[0];
+      const b = gcdBase * pair[1];
+
+      // 若乘積過大(>1500)，重新生成以維持心算友善度
+      if (a > 1500 || b > 1500) {
+        return generateRandomGcdQuestion();
+      }
+
+      return Math.random() > 0.5 ? [a, b] : [b, a];
+    }
+
     function generate4Code() {
       return Math.floor(1000 + Math.random() * 9000).toString();
     }
 
-    // 開房
     function createRoom() {
+      isHost = true;
       const code = generate4Code();
       const statusEl = document.getElementById('createStatus');
       statusEl.classList.remove('hidden');
@@ -210,21 +262,20 @@
       peer.on('connection', (c) => {
         conn = c;
         setupConnection();
-        // 房主決定題目並分發
-        const q = QUESTION_POOL[Math.floor(Math.random() * QUESTION_POOL.length)];
+        const q = generateRandomGcdQuestion();
         setTimeout(() => {
           startGame(q[0], q[1]);
           conn.send({ type: 'START', q: q });
         }, 500);
       });
 
-      peer.on('error', (err) => {
+      peer.on('error', () => {
         statusEl.innerText = "開房失敗，請再試一次或重新整理。";
       });
     }
 
-    // 加入房間
     function joinRoom() {
+      isHost = false;
       const input = document.getElementById('inputRoomCode').value.trim();
       const statusEl = document.getElementById('joinStatus');
       if (input.length !== 4) {
@@ -242,12 +293,11 @@
         setupConnection();
       });
 
-      peer.on('error', (err) => {
+      peer.on('error', () => {
         statusEl.innerText = "找不到該房號，請確認後重試。";
       });
     }
 
-    // 設定連線通訊處理
     function setupConnection() {
       conn.on('open', () => {
         document.getElementById('lobbyScreen').classList.add('hidden');
@@ -255,12 +305,14 @@
       });
 
       conn.on('data', (data) => {
+        if (!data) return;
+
         if (data.type === 'START') {
           startGame(data.q[0], data.q[1]);
         } else if (data.type === 'PROGRESS') {
           document.getElementById('enemyNums').innerText = `[ ${data.a}, ${data.b} ]`;
         } else if (data.type === 'WIN') {
-          triggerGameOver(false, data.finalGcd, data.lastA, data.lastB);
+          triggerGameOver(false, data.finalGcd, data.finalLcm, data.lastA, data.lastB, data.factors);
         } else if (data.type === 'REMATCH_REQUEST') {
           handleRematchRequest();
         } else if (data.type === 'REMATCH_START') {
@@ -270,7 +322,6 @@
       });
     }
 
-    // 開始遊戲初始化
     function startGame(a, b) {
       myA = a; myB = b;
       initA = a; initB = b;
@@ -278,17 +329,19 @@
       isStunned = false;
       gameOver = false;
 
-      // 重設再戰狀態與按鈕
       rematchRequestedByMe = false;
       rematchRequestedByPeer = false;
+
       const btn = document.getElementById('btnRematch');
       const statusEl = document.getElementById('rematchStatus');
       if (btn) {
         btn.disabled = false;
         btn.classList.remove('opacity-50', 'cursor-not-allowed', 'ring-2', 'ring-amber-400', 'animate-pulse');
+        btn.innerText = "再來一局";
       }
       if (statusEl) statusEl.innerText = '';
 
+      document.getElementById('enemyNums').innerText = `[ ${a}, ${b} ]`;
       updateUI();
     }
 
@@ -298,45 +351,46 @@
       document.getElementById('factorsHistory').innerText = myFactors.length > 0 ? myFactors.join(' × ') : '無';
     }
 
-    // 揮動神劍短除
     function slash(prime) {
       if (isStunned || gameOver) return;
 
-      // 檢查是否兩者皆能整除
       if (myA % prime === 0 && myB % prime === 0) {
         myA /= prime;
         myB /= prime;
         myFactors.push(prime);
         updateUI();
 
-        // 同步狀態給對手
         if (conn && conn.open) {
           conn.send({ type: 'PROGRESS', a: myA, b: myB });
         }
       } else {
-        triggerStun(3); // 彈刀罰停 3 秒
+        triggerStun(3);
       }
     }
 
-    // 發動互質斬殺判定
     function claimCoprime() {
       if (isStunned || gameOver) return;
 
       const currentGcd = calcGcd(myA, myB);
       if (currentGcd === 1) {
-        // 確實互質，成功斬殺獲勝！
         const totalGcd = myFactors.reduce((acc, val) => acc * val, 1);
+        const totalLcm = totalGcd * myA * myB;
         if (conn && conn.open) {
-          conn.send({ type: 'WIN', finalGcd: totalGcd, lastA: myA, lastB: myB });
+          conn.send({ 
+            type: 'WIN', 
+            finalGcd: totalGcd, 
+            finalLcm: totalLcm, 
+            lastA: myA, 
+            lastB: myB,
+            factors: myFactors
+          });
         }
-        triggerGameOver(true, totalGcd, myA, myB);
+        triggerGameOver(true, totalGcd, totalLcm, myA, myB, myFactors);
       } else {
-        // 誤判：兩數還可以再被整除，給予 4 秒懲罰！
         triggerStun(4);
       }
     }
 
-    // 彈刀處罰倒數
     function triggerStun(seconds) {
       isStunned = true;
       const overlay = document.getElementById('stunOverlay');
@@ -357,8 +411,7 @@
       }, 1000);
     }
 
-    // 遊戲結束結算
-    function triggerGameOver(isWinner, finalGcd, endA, endB) {
+    function triggerGameOver(isWinner, finalGcd, finalLcm, endA, endB, factors) {
       gameOver = true;
       const modal = document.getElementById('resultModal');
       const title = document.getElementById('resultTitle');
@@ -366,15 +419,17 @@
       const icon = document.getElementById('resultIcon');
 
       document.getElementById('summaryInitNums').innerText = `[ ${initA}, ${initB} ]`;
+      document.getElementById('summaryFactorList').innerText = factors && factors.length > 0 ? factors.join(' × ') : '無 (兩數原已互質)';
+      document.getElementById('summaryRemain').innerText = `[ ${endA}, ${endB} ]`;
       document.getElementById('summaryGcd').innerText = finalGcd;
-      document.getElementById('summaryRemain').innerText = `[ ${endA}, ${endB} ] (互質)`;
+      document.getElementById('summaryLcm').innerText = finalLcm;
 
       if (isWinner) {
         icon.innerText = "🏆";
         title.innerText = "對決獲勝！";
         title.className = "text-2xl font-black text-amber-400 mb-1";
-        desc.innerText = "完美洞悉互質時機，成功終結魔獸！";
-        confetti({ particleCount: 100, spread: 70, origin: { y: 0.6 } });
+        desc.innerText = "精準洞悉互質時機，成功終結雙子怪！";
+        try { confetti({ particleCount: 120, spread: 80, origin: { y: 0.6 } }); } catch(e){}
       } else {
         icon.innerText = "💀";
         title.innerText = "對決落敗！";
@@ -385,50 +440,58 @@
       modal.classList.remove('hidden');
     }
 
-    // 點擊「再來一局」
-    function requestRematch() {
+    function requestRematch(e) {
+      if (e) e.preventDefault();
       const btn = document.getElementById('btnRematch');
       const statusEl = document.getElementById('rematchStatus');
 
       rematchRequestedByMe = true;
       btn.disabled = true;
       btn.classList.add('opacity-50', 'cursor-not-allowed');
+      btn.innerText = "等待對手中...";
+
+      if (conn && conn.open) {
+        conn.send({ type: 'REMATCH_REQUEST' });
+      }
 
       if (rematchRequestedByPeer) {
-        // 對方已先邀請，直接重開
-        statusEl.innerText = "雙方同意，立即開局！";
-        startNewRematchGame();
+        statusEl.innerText = "雙方同意，準備開局...";
+        checkAndLaunchRematch();
       } else {
-        // 送出再戰請求
-        statusEl.innerText = "已送出邀請，等待對手同意...";
-        if (conn && conn.open) {
-          conn.send({ type: 'REMATCH_REQUEST' });
-        }
+        statusEl.innerText = "已送出邀請，等待對手點擊同意...";
       }
     }
 
-    // 收到對手的再戰請求
     function handleRematchRequest() {
       rematchRequestedByPeer = true;
       const statusEl = document.getElementById('rematchStatus');
       const btn = document.getElementById('btnRematch');
 
       if (rematchRequestedByMe) {
-        startNewRematchGame();
+        statusEl.innerText = "雙方同意，準備開局...";
+        checkAndLaunchRematch();
       } else {
-        statusEl.innerText = "🔥 對手邀請再來一局！";
+        statusEl.innerText = "🔥 對手邀請再來一局！請點擊同意";
         btn.classList.add('ring-2', 'ring-amber-400', 'animate-pulse');
+        btn.innerText = "同意再來一局";
       }
     }
 
-    // 重新分發題目開局
-    function startNewRematchGame() {
-      const q = QUESTION_POOL[Math.floor(Math.random() * QUESTION_POOL.length)];
-      if (conn && conn.open) {
-        conn.send({ type: 'REMATCH_START', q: q });
+    function checkAndLaunchRematch() {
+      if (isHost) {
+        const q = generateRandomGcdQuestion();
+        setTimeout(() => {
+          if (conn && conn.open) {
+            conn.send({ type: 'REMATCH_START', q: q });
+          }
+          document.getElementById('resultModal').classList.add('hidden');
+          startGame(q[0], q[1]);
+        }, 600);
       }
-      document.getElementById('resultModal').classList.add('hidden');
-      startGame(q[0], q[1]);
+    }
+
+    function leaveToLobby() {
+      window.location.reload();
     }
   </script>
 </body>
