@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-  <title>地牢切怪 - 公因數公倍數雙人對決</title>
+  <title>地牢切怪 - 質因數雙人對決</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <script src="https://unpkg.com/peerjs@1.5.2/dist/peerjs.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
@@ -13,8 +13,8 @@
   <!-- 頂部資訊列 -->
   <header class="w-full max-w-sm flex items-center justify-between py-2 border-b border-slate-700/60 text-xs">
     <div class="flex items-center gap-1.5 font-bold text-amber-400">
-      <span>🐉</span>
-      <span>公因數雙人戰</span>
+      <span>⚔️</span>
+      <span>質因數雙人戰</span>
     </div>
     <div id="roomBadge" class="bg-slate-800 px-2 py-0.5 rounded text-slate-300 font-mono hidden">
       房號: <span id="displayRoomCode" class="text-amber-400 font-bold">----</span>
@@ -24,9 +24,9 @@
   <!-- 大廳畫面：開房 / 進房 -->
   <main id="lobbyScreen" class="w-full max-w-sm flex-1 flex flex-col justify-center items-center gap-4 my-auto">
     <div class="text-center">
-      <div class="text-4xl mb-2">⚔️</div>
-      <h2 class="text-xl font-black text-amber-400">雙子魔物・公因數對決</h2>
-      <p class="text-xs text-slate-400 mt-1">抽出兩數的共同質因數，一路切到互質並搶先斬殺！</p>
+      <div class="text-4xl mb-2">🗡️</div>
+      <h2 class="text-xl font-black text-amber-400">質因數魔物・競速切怪</h2>
+      <p class="text-xs text-slate-400 mt-1">選取正確質數神劍斬擊，最快將怪獸血量削至 1 者獲勝！</p>
     </div>
 
     <!-- 開房區塊 -->
@@ -58,53 +58,37 @@
     
     <!-- 對手狀態縮小條 -->
     <div class="bg-slate-800/60 border border-slate-700/60 rounded-xl p-2 flex items-center justify-between text-xs">
-      <span class="text-slate-400">對手進度:</span>
+      <span class="text-slate-400">對手剩餘血量:</span>
       <div class="flex items-center gap-2 font-mono">
-        <span id="enemyNums" class="text-slate-300 font-bold">[ ?, ? ]</span>
+        <span id="enemyHp" class="text-slate-300 font-bold">?</span>
         <span id="enemyStatus" class="text-emerald-400 text-[11px]">作戰中</span>
       </div>
     </div>
 
-    <!-- 本地雙子怪中央顯示區 -->
-    <div class="relative bg-slate-800 rounded-2xl border-2 border-slate-700 p-4 flex flex-col items-center justify-center my-2 shadow-inner">
-      <div class="text-xs text-slate-400 font-medium mb-1">雙子怪核心數值</div>
+    <!-- 本地魔物中央顯示區 -->
+    <div class="relative bg-slate-800 rounded-2xl border-2 border-slate-700 p-6 flex flex-col items-center justify-center my-auto shadow-inner">
+      <div class="text-xs text-slate-400 font-medium mb-1">地牢魔物生命值</div>
 
-      <!-- 兩個數字並列 -->
-      <div class="flex items-center justify-center gap-3 my-2 w-full">
-        <div class="flex-1 bg-slate-900/90 border border-amber-500/40 rounded-xl py-3 text-center shadow-lg">
-          <div class="text-[10px] text-amber-300/70 font-mono">數值 A</div>
-          <div id="numA" class="text-3xl font-black text-amber-400 font-mono tracking-tight">--</div>
-        </div>
-        <div class="text-xl font-black text-slate-500 font-mono">&</div>
-        <div class="flex-1 bg-slate-900/90 border border-amber-500/40 rounded-xl py-3 text-center shadow-lg">
-          <div class="text-[10px] text-amber-300/70 font-mono">數值 B</div>
-          <div id="numB" class="text-3xl font-black text-amber-400 font-mono tracking-tight">--</div>
-        </div>
+      <!-- 單一數字怪物血量 -->
+      <div class="w-full bg-slate-900/90 border border-amber-500/40 rounded-2xl py-6 text-center shadow-lg my-2">
+        <div id="myHp" class="text-6xl font-black text-amber-400 font-mono tracking-tight">--</div>
       </div>
 
-      <!-- 已分解公因數紀錄 -->
-      <div class="text-xs text-slate-400 mt-1 flex items-center gap-1 font-mono">
-        <span>已抽出的公因數:</span>
+      <!-- 已分解質因數紀錄 -->
+      <div class="text-xs text-slate-400 mt-2 flex items-center gap-1 font-mono">
+        <span>已斬擊質因數:</span>
         <span id="factorsHistory" class="text-emerald-400 font-bold">無</span>
       </div>
 
-      <!-- 彈刀 / 誤判懲罰遮罩 -->
+      <!-- 彈刀懲罰遮罩 -->
       <div id="stunOverlay" class="absolute inset-0 bg-slate-950/85 backdrop-blur-sm rounded-2xl flex flex-col items-center justify-center gap-1 hidden z-20">
         <div class="text-3xl animate-bounce">⚡</div>
         <div class="text-sm font-black text-rose-400">彈刀懲罰！</div>
-        <div class="text-xs text-slate-300">不能同時整除，冷卻倒數: <span id="stunCount" class="font-bold text-amber-400">3</span> 秒</div>
+        <div class="text-xs text-slate-300">無法整除，冷卻倒數: <span id="stunCount" class="font-bold text-amber-400">3</span> 秒</div>
       </div>
     </div>
 
-    <!-- 終結技：互質斬殺大按鈕 -->
-    <div class="w-full mb-2">
-      <button type="button" id="btnCoprime" onclick="claimCoprime()" class="w-full py-3 bg-gradient-to-r from-amber-500 via-rose-500 to-amber-500 rounded-xl font-black text-base tracking-wider text-white shadow-lg shadow-rose-950/50 border border-amber-300 active:scale-95 transition-all">
-        ⚡ 雙數互質！發動終結斬殺
-      </button>
-      <p class="text-[10px] text-slate-400 text-center mt-1">※ 注意：若仍有大於 1 的公因數卻按下，將被重罰凍結 4 秒！</p>
-    </div>
-
-    <!-- 下方神劍操作面板 (擴充為 5 顆：2, 3, 5, 7, 11) -->
+    <!-- 下方神劍操作面板 (2, 3, 5, 7, 11) -->
     <div class="grid grid-cols-5 gap-1.5 w-full">
       <button type="button" onclick="slash(2)" class="slash-btn py-3 bg-slate-800 hover:bg-slate-700 active:scale-90 border-2 border-indigo-500/50 rounded-xl flex flex-col items-center justify-center transition-all">
         <span class="text-[9px] text-indigo-300 font-semibold">神劍</span>
@@ -130,43 +114,33 @@
 
   </main>
 
-  <!-- 放大版結算彈窗 -->
+  <!-- 放大版統一風格結算彈窗 -->
   <div id="resultModal" class="fixed inset-0 bg-slate-950/90 backdrop-blur-md flex items-center justify-center p-3 hidden z-50">
     <div class="max-w-sm w-full bg-slate-800 border-2 border-slate-700 rounded-3xl p-6 text-center flex flex-col items-center shadow-2xl">
       <div id="resultIcon" class="text-6xl mb-2">🏆</div>
       <h3 id="resultTitle" class="text-2xl font-black text-amber-400 mb-1">獲得勝利！</h3>
-      <p id="resultDesc" class="text-xs text-slate-300 mb-4">精準判斷互質時機，成功發動斬殺！</p>
+      <p id="resultDesc" class="text-xs text-slate-300 mb-4">最快完成質因數分解，成功消滅魔物！</p>
 
       <!-- 放大版數學短除法回顧區塊 -->
       <div class="w-full bg-slate-900/90 rounded-2xl p-4 border border-slate-700 text-left text-sm space-y-2 font-mono mb-5 shadow-inner">
         <div class="text-amber-400/90 text-xs font-bold border-b border-slate-700/60 pb-1 flex justify-between items-center">
           <span>短除法結算教學分析</span>
-          <span class="text-[10px] text-slate-500">標準分解</span>
+          <span class="text-[10px] text-slate-500">質因數分解</span>
         </div>
         
         <div class="flex justify-between items-center text-xs">
-          <span class="text-slate-400">題目原始數值：</span>
-          <span id="summaryInitNums" class="text-amber-300 font-black text-sm"></span>
+          <span class="text-slate-400">魔物原始血量：</span>
+          <span id="summaryInitHp" class="text-amber-300 font-black text-sm"></span>
         </div>
 
         <div class="flex justify-between items-center text-xs">
-          <span class="text-slate-400">抽出公因數：</span>
+          <span class="text-slate-400">斬擊質因數乘積：</span>
           <span id="summaryFactorList" class="text-cyan-300 font-bold"></span>
         </div>
 
-        <div class="flex justify-between items-center text-xs">
-          <span class="text-slate-400">最後互質商數：</span>
-          <span id="summaryRemain" class="text-slate-300 font-bold"></span>
-        </div>
-
         <div class="pt-1 border-t border-slate-800 flex justify-between items-center">
-          <span class="text-emerald-400 font-bold">最大公因數 (GCD)：</span>
-          <span id="summaryGcd" class="text-emerald-400 font-black text-base"></span>
-        </div>
-
-        <div class="flex justify-between items-center">
-          <span class="text-indigo-400 font-bold">最小公倍數 (LCM)：</span>
-          <span id="summaryLcm" class="text-indigo-400 font-black text-base"></span>
+          <span class="text-emerald-400 font-bold">標準分解式：</span>
+          <span id="summaryPrimePower" class="text-emerald-400 font-black text-base"></span>
         </div>
       </div>
 
@@ -186,15 +160,15 @@
   </div>
 
   <footer class="w-full text-center py-1 text-[10px] text-slate-500">
-    PeerJS P2P Dual GCD & LCM Engine
+    PeerJS P2P Prime Factorization Duel Engine
   </footer>
 
   <script>
     let peer = null;
     let conn = null;
     let isHost = false;
-    let myA = 0, myB = 0;
-    let initA = 0, initB = 0;
+    let myHp = 0;
+    let initHp = 0;
     let myFactors = [];
     let isStunned = false;
     let gameOver = false;
@@ -202,42 +176,35 @@
     let rematchRequestedByMe = false;
     let rematchRequestedByPeer = false;
 
-    // 歐幾里得輾轉相除法求 GCD
-    function calcGcd(a, b) {
-      return b === 0 ? a : calcGcd(b, a % b);
-    }
-
-    // 題目動態隨機生成（包含 2, 3, 5, 7, 11）
-    function generateRandomGcdQuestion() {
-      // 隨機池：加重 2, 3, 5 比重，適量出現 7 與 11
+    // 動態隨機生成質因數題目（2, 3, 5, 7, 11 組合，砍 3~4 刀）
+    function generateRandomQuestion() {
       const primePool = [2, 2, 2, 3, 3, 3, 5, 5, 7, 11];
-      
-      // 隨機抽 2 ~ 3 個質數相乘作為最大公因數
-      const count = Math.floor(Math.random() * 2) + 2;
-      let gcdBase = 1;
+      const count = Math.floor(Math.random() * 2) + 3; // 3 到 4 個質因數
+      let hp = 1;
       for (let i = 0; i < count; i++) {
         const p = primePool[Math.floor(Math.random() * primePool.length)];
-        gcdBase *= p;
+        hp *= p;
       }
-
-      // 挑選互質的小商數對
-      const coprimePairs = [
-        [1, 2], [1, 3], [1, 4], [1, 5],
-        [2, 3], [2, 5], [2, 7],
-        [3, 4], [3, 5], [3, 7],
-        [4, 5], [5, 6]
-      ];
-      const pair = coprimePairs[Math.floor(Math.random() * coprimePairs.length)];
-
-      const a = gcdBase * pair[0];
-      const b = gcdBase * pair[1];
-
-      // 若乘積過大(>1500)，重新生成以維持心算友善度
-      if (a > 1500 || b > 1500) {
-        return generateRandomGcdQuestion();
+      // 控制在 1500 以內避免過難
+      if (hp > 1500 || hp < 20) {
+        return generateRandomQuestion();
       }
+      return hp;
+    }
 
-      return Math.random() > 0.5 ? [a, b] : [b, a];
+    // 計算標準分解式字串 (例如: 2³ × 3² × 5)
+    function formatPrimePower(factors) {
+      if (!factors || factors.length === 0) return '1';
+      const counts = {};
+      factors.forEach(p => counts[p] = (counts[p] || 0) + 1);
+      
+      const superscripts = { '1': '', '2': '²', '3': '³', '4': '⁴', '5': '⁵', '6': '⁶' };
+      const sortedKeys = Object.keys(counts).map(Number).sort((a, b) => a - b);
+      
+      return sortedKeys.map(p => {
+        const c = counts[p];
+        return c > 1 ? `${p}${superscripts[c] || '^' + c}` : `${p}`;
+      }).join(' × ');
     }
 
     function generate4Code() {
@@ -262,10 +229,10 @@
       peer.on('connection', (c) => {
         conn = c;
         setupConnection();
-        const q = generateRandomGcdQuestion();
+        const hp = generateRandomQuestion();
         setTimeout(() => {
-          startGame(q[0], q[1]);
-          conn.send({ type: 'START', q: q });
+          startGame(hp);
+          conn.send({ type: 'START', hp: hp });
         }, 500);
       });
 
@@ -308,23 +275,23 @@
         if (!data) return;
 
         if (data.type === 'START') {
-          startGame(data.q[0], data.q[1]);
+          startGame(data.hp);
         } else if (data.type === 'PROGRESS') {
-          document.getElementById('enemyNums').innerText = `[ ${data.a}, ${data.b} ]`;
+          document.getElementById('enemyHp').innerText = data.hp;
         } else if (data.type === 'WIN') {
-          triggerGameOver(false, data.finalGcd, data.finalLcm, data.lastA, data.lastB, data.factors);
+          triggerGameOver(false, data.factors);
         } else if (data.type === 'REMATCH_REQUEST') {
           handleRematchRequest();
         } else if (data.type === 'REMATCH_START') {
           document.getElementById('resultModal').classList.add('hidden');
-          startGame(data.q[0], data.q[1]);
+          startGame(data.hp);
         }
       });
     }
 
-    function startGame(a, b) {
-      myA = a; myB = b;
-      initA = a; initB = b;
+    function startGame(hp) {
+      myHp = hp;
+      initHp = hp;
       myFactors = [];
       isStunned = false;
       gameOver = false;
@@ -341,53 +308,36 @@
       }
       if (statusEl) statusEl.innerText = '';
 
-      document.getElementById('enemyNums').innerText = `[ ${a}, ${b} ]`;
+      document.getElementById('enemyHp').innerText = hp;
       updateUI();
     }
 
     function updateUI() {
-      document.getElementById('numA').innerText = myA;
-      document.getElementById('numB').innerText = myB;
+      document.getElementById('myHp').innerText = myHp;
       document.getElementById('factorsHistory').innerText = myFactors.length > 0 ? myFactors.join(' × ') : '無';
     }
 
     function slash(prime) {
       if (isStunned || gameOver) return;
 
-      if (myA % prime === 0 && myB % prime === 0) {
-        myA /= prime;
-        myB /= prime;
+      if (myHp % prime === 0) {
+        myHp /= prime;
         myFactors.push(prime);
         updateUI();
 
         if (conn && conn.open) {
-          conn.send({ type: 'PROGRESS', a: myA, b: myB });
+          conn.send({ type: 'PROGRESS', hp: myHp });
+        }
+
+        // 削至 1 代表完全質因數分解完成
+        if (myHp === 1) {
+          if (conn && conn.open) {
+            conn.send({ type: 'WIN', factors: myFactors });
+          }
+          triggerGameOver(true, myFactors);
         }
       } else {
         triggerStun(3);
-      }
-    }
-
-    function claimCoprime() {
-      if (isStunned || gameOver) return;
-
-      const currentGcd = calcGcd(myA, myB);
-      if (currentGcd === 1) {
-        const totalGcd = myFactors.reduce((acc, val) => acc * val, 1);
-        const totalLcm = totalGcd * myA * myB;
-        if (conn && conn.open) {
-          conn.send({ 
-            type: 'WIN', 
-            finalGcd: totalGcd, 
-            finalLcm: totalLcm, 
-            lastA: myA, 
-            lastB: myB,
-            factors: myFactors
-          });
-        }
-        triggerGameOver(true, totalGcd, totalLcm, myA, myB, myFactors);
-      } else {
-        triggerStun(4);
       }
     }
 
@@ -411,30 +361,30 @@
       }, 1000);
     }
 
-    function triggerGameOver(isWinner, finalGcd, finalLcm, endA, endB, factors) {
+    function triggerGameOver(isWinner, finalFactors) {
       gameOver = true;
       const modal = document.getElementById('resultModal');
       const title = document.getElementById('resultTitle');
       const desc = document.getElementById('resultDesc');
       const icon = document.getElementById('resultIcon');
 
-      document.getElementById('summaryInitNums').innerText = `[ ${initA}, ${initB} ]`;
-      document.getElementById('summaryFactorList').innerText = factors && factors.length > 0 ? factors.join(' × ') : '無 (兩數原已互質)';
-      document.getElementById('summaryRemain').innerText = `[ ${endA}, ${endB} ]`;
-      document.getElementById('summaryGcd').innerText = finalGcd;
-      document.getElementById('summaryLcm').innerText = finalLcm;
+      const usedFactors = finalFactors || myFactors;
+
+      document.getElementById('summaryInitHp').innerText = initHp;
+      document.getElementById('summaryFactorList').innerText = usedFactors.join(' × ');
+      document.getElementById('summaryPrimePower').innerText = formatPrimePower(usedFactors);
 
       if (isWinner) {
         icon.innerText = "🏆";
         title.innerText = "對決獲勝！";
         title.className = "text-2xl font-black text-amber-400 mb-1";
-        desc.innerText = "精準洞悉互質時機，成功終結雙子怪！";
+        desc.innerText = "最快完成質因數分解，成功消滅魔物！";
         try { confetti({ particleCount: 120, spread: 80, origin: { y: 0.6 } }); } catch(e){}
       } else {
         icon.innerText = "💀";
         title.innerText = "對決落敗！";
         title.className = "text-2xl font-black text-rose-500 mb-1";
-        desc.innerText = "對手搶先看出互質並完成斬殺！";
+        desc.innerText = "對手搶先一步斬殺完成！";
       }
 
       modal.classList.remove('hidden');
@@ -479,13 +429,13 @@
 
     function checkAndLaunchRematch() {
       if (isHost) {
-        const q = generateRandomGcdQuestion();
+        const hp = generateRandomQuestion();
         setTimeout(() => {
           if (conn && conn.open) {
-            conn.send({ type: 'REMATCH_START', q: q });
+            conn.send({ type: 'REMATCH_START', hp: hp });
           }
           document.getElementById('resultModal').classList.add('hidden');
-          startGame(q[0], q[1]);
+          startGame(hp);
         }, 600);
       }
     }
