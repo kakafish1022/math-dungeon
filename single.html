@@ -19,7 +19,7 @@
       <span id="headerTitle">單人試煉地牢</span>
     </div>
     
-    <!-- 儀表狀態 (五關跑正計時，無盡跑倒數計時) -->
+    <!-- 儀表狀態 -->
     <div id="meterContainer" class="flex items-center gap-1 font-mono bg-slate-800 px-2.5 py-1 rounded-lg border border-slate-700 hidden">
       <span id="meterLabel" class="text-slate-400 text-[10px]">TIME</span>
       <span id="meterDisplay" class="text-amber-400 font-bold text-sm tracking-wider">00.00</span>
@@ -201,54 +201,52 @@
       }
     });
 
-    // 遊戲狀態模式: 'STAGES' 或 'ENDLESS'
     let currentMode = 'STAGES';
 
-    // 五關關卡設定
+    // 五關關卡固定設定
     const FIVE_STAGES = [
-      { floor: 'B1', name: 'B1 史萊姆', icon: '🟢', desc: '基礎暖身：2、3 的小倍數', pool: [2, 2, 3, 3], cuts: [2, 2], maxLimit: 60 },
-      { floor: 'B2', name: 'B2 骷髏兵', icon: '💀', desc: '倍數混合：加入 5 的因數', pool: [2, 3, 5, 5], cuts: [2, 3], maxLimit: 150 },
-      { floor: 'B3', name: 'B3 哥布林精銳', icon: '👺', desc: '進階考驗：加入 7 的質因數', pool: [2, 3, 5, 7, 7], cuts: [3, 4], maxLimit: 450 },
-      { floor: 'B4', name: 'B4 石巨人領主', icon: '🗿', desc: '巨額血量：多重質因數混搭', pool: [2, 3, 5, 7, 7], cuts: [3, 4], maxLimit: 1000 },
-      { floor: 'B5', name: 'B5 深淵黑龍王', icon: '🐲', desc: '極限首領：必含 11 奇偶位差考驗', pool: [2, 3, 5, 7, 11, 11], cuts: [3, 4], maxLimit: 1500, mustInclude: 11 }
+      { floor: 'B1', name: 'B1 史萊姆', icon: '🟢', desc: '基礎暖身：2、3 的小倍數', pool: [2, 2, 3, 3], cuts: 2, maxLimit: 60 },
+      { floor: 'B2', name: 'B2 骷髏兵', icon: '💀', desc: '倍數混合：加入 5 的因數', pool: [2, 3, 5], cuts: 3, maxLimit: 150 },
+      { floor: 'B3', name: 'B3 哥布林精銳', icon: '👺', desc: '進階考驗：加入 7 的質因數', pool: [2, 3, 5, 7], cuts: 3, maxLimit: 450 },
+      { floor: 'B4', name: 'B4 石巨人領主', icon: '🗿', desc: '巨額血量：多重質因數混搭', pool: [2, 3, 5, 7], cuts: 4, maxLimit: 1000 },
+      { floor: 'B5', name: 'B5 深淵黑龍王', icon: '🐲', desc: '極限首領：必含 11 奇偶位差考驗', pool: [2, 3, 5, 7], cuts: 3, maxLimit: 1500, mustInclude: 11 }
     ];
 
     let stageIndex = 0;
-    let currentHp = 0;
-    let currentInitHp = 0;
+    let currentHp = 1;
+    let currentInitHp = 1;
     let stageFactors = [];
     let stagesRecord = [];
 
-    // 無盡模式狀態
     let endlessKills = 0;
     let currentCombo = 0;
     let maxCombo = 0;
     let endlessTimeRemaining = 45.0;
 
-    // 通用計時器
     let timerInterval = null;
     let speedStartTime = null;
     let isTimerRunning = false;
     let isStunned = false;
 
-    // 隨機魔物血量生成演算法
-    function generateMonsterHp(pool, minCuts, maxCuts, maxLimit, mustInclude = null) {
-      const cuts = Math.floor(Math.random() * (maxCuts - minCuts + 1)) + minCuts;
-      let factors = [];
-      if (mustInclude) factors.push(mustInclude);
-
-      while (factors.length < cuts) {
-        factors.push(pool[Math.floor(Math.random() * pool.length)]);
+    // 安全生成魔物血量（保證不為 0，且血量合理）
+    function generateMonsterHp(pool, cuts, maxLimit, mustInclude = null) {
+      for (let attempt = 0; attempt < 50; attempt++) {
+        let factors = [];
+        if (mustInclude) {
+          factors.push(mustInclude);
+        }
+        for (let i = factors.length; i < cuts; i++) {
+          factors.push(pool[Math.floor(Math.random() * pool.length)]);
+        }
+        let total = factors.reduce((acc, v) => acc * v, 1);
+        if (total >= 12 && total <= maxLimit) {
+          return total;
+        }
       }
-
-      const hp = factors.reduce((acc, v) => acc * v, 1);
-      if (hp > maxLimit || hp < 12) {
-        return generateMonsterHp(pool, minCuts, maxCuts, maxLimit, mustInclude);
-      }
-      return hp;
+      // 保底數值避免極端狀況返回 0
+      return mustInclude ? mustInclude * 6 : 24;
     }
 
-    // 計算標準分解式字串
     function formatPrimePower(factors) {
       if (!factors || factors.length === 0) return '1';
       const counts = {};
@@ -261,16 +259,16 @@
       }).join(' × ');
     }
 
-    // 更新大廳紀錄預覽
     function updateLobbyPreview() {
       const speedRecords = JSON.parse(localStorage.getItem('dungeon_speed_records') || '[]');
       const endlessRecords = JSON.parse(localStorage.getItem('dungeon_endless_records') || '[]');
       
-      document.getElementById('lobbyBestSpeed').innerText = speedRecords.length > 0 ? `${speedRecords[0].toFixed(2)} 秒` : '無紀錄';
-      document.getElementById('lobbyBestEndless').innerText = endlessRecords.length > 0 ? `${endlessRecords[0]} 隻魔物` : '無紀錄';
+      const spEl = document.getElementById('lobbyBestSpeed');
+      const endEl = document.getElementById('lobbyBestEndless');
+      if (spEl) spEl.innerText = speedRecords.length > 0 ? `${speedRecords[0].toFixed(2)} 秒` : '無紀錄';
+      if (endEl) endEl.innerText = endlessRecords.length > 0 ? `${endlessRecords[0]} 隻魔物` : '無紀錄';
     }
 
-    // 切換回主選單
     function backToModeSelect() {
       clearInterval(timerInterval);
       document.getElementById('battleScreen').classList.add('hidden');
@@ -281,7 +279,6 @@
       updateLobbyPreview();
     }
 
-    // 啟動五關競速模式
     function startFiveStagesMode() {
       currentMode = 'STAGES';
       stageIndex = 0;
@@ -305,12 +302,11 @@
 
     function loadFiveStage(idx) {
       const stage = FIVE_STAGES[idx];
-      currentHp = generateMonsterHp(stage.pool, stage.cuts[0], stage.cuts[1], stage.maxLimit, stage.mustInclude);
+      currentHp = generateMonsterHp(stage.pool, stage.cuts, stage.maxLimit, stage.mustInclude);
       currentInitHp = currentHp;
       stageFactors = [];
       isStunned = false;
 
-      // 更新五點進度條
       for (let i = 0; i < 5; i++) {
         const dot = document.getElementById(`stageDot${i}`);
         if (i < idx) {
@@ -331,7 +327,6 @@
       updateUI();
     }
 
-    // 啟動無盡深淵模式
     function startEndlessMode() {
       currentMode = 'ENDLESS';
       endlessKills = 0;
@@ -359,23 +354,24 @@
     }
 
     function loadEndlessMonster() {
-      // 依擊破數階梯提升難度
       let pool = [2, 2, 3, 3, 5];
-      let minC = 2, maxC = 3;
-      let limit = 200;
+      let cuts = 2;
+      let limit = 180;
+      let mustInclude = null;
 
       if (endlessKills >= 5) {
         pool.push(7, 7);
-        minC = 3; maxC = 4;
-        limit = 600;
+        cuts = 3;
+        limit = 500;
       }
-      if (endlessKills >= 12) {
-        pool.push(11, 11);
-        minC = 3; maxC = 4;
+      if (endlessKills >= 10) {
+        pool.push(11);
+        cuts = 4;
         limit = 1500;
+        if (Math.random() > 0.5) mustInclude = 11;
       }
 
-      currentHp = generateMonsterHp(pool, minC, maxC, limit);
+      currentHp = generateMonsterHp(pool, cuts, limit, mustInclude);
       currentInitHp = currentHp;
       stageFactors = [];
       isStunned = false;
@@ -395,11 +391,9 @@
       document.getElementById('factorsHistory').innerText = stageFactors.length > 0 ? stageFactors.join(' × ') : '無';
     }
 
-    // 揮動神劍斬擊
     function slash(prime) {
       if (isStunned) return;
 
-      // 啟動對應計時機制
       if (!isTimerRunning) {
         isTimerRunning = true;
         if (currentMode === 'STAGES') {
@@ -421,7 +415,6 @@
         }
       }
 
-      // 整除判定
       if (currentHp % prime === 0) {
         currentHp /= prime;
         stageFactors.push(prime);
@@ -432,14 +425,12 @@
           document.getElementById('endlessComboCount').innerText = currentCombo;
         }
 
-        // 數值打擊特效
         const hpEl = document.getElementById('monsterHp');
         hpEl.classList.add('scale-110', 'text-emerald-400');
         setTimeout(() => hpEl.classList.remove('scale-110', 'text-emerald-400'), 120);
 
         updateUI();
 
-        // 削至 1 擊倒魔物
         if (currentHp === 1) {
           if (currentMode === 'STAGES') {
             stagesRecord.push({
@@ -455,7 +446,6 @@
               finishStagesGame();
             }
           } else {
-            // 無盡模式加時間與累加計數
             endlessKills++;
             endlessTimeRemaining += 4.0;
             document.getElementById('endlessKillCount').innerText = endlessKills;
@@ -463,7 +453,6 @@
           }
         }
       } else {
-        // 彈刀處罰：罰停 3 秒，連擊歸零
         currentCombo = 0;
         if (currentMode === 'ENDLESS') {
           document.getElementById('endlessComboCount').innerText = 0;
@@ -472,7 +461,6 @@
       }
     }
 
-    // 彈刀凍結懲罰
     function triggerStun(seconds) {
       isStunned = true;
       const overlay = document.getElementById('stunOverlay');
@@ -493,13 +481,11 @@
       }, 1000);
     }
 
-    // 五關模式通關結算
     function finishStagesGame() {
       clearInterval(timerInterval);
       const totalTime = ((performance.now() - speedStartTime) / 1000).toFixed(2);
       const secNum = parseFloat(totalTime);
 
-      // 段位評估 (35s內S級, 55s內A級, 80s內B級)
       let tier = "S 級", title = "神速・質因數劍豪", icon = "⚡", color = "text-amber-400";
       if (secNum >= 80.0) {
         tier = "C 級"; title = "頑強・見習生"; icon = "🩹"; color = "text-slate-400";
@@ -514,7 +500,6 @@
       document.getElementById('resultMainTitle').className = `text-2xl font-black ${color} tracking-wider`;
       document.getElementById('resultSubTitle').innerText = title;
 
-      // 戰績教學卡片
       let detailsHtml = `
         <div class="flex justify-between items-center border-b border-slate-700/60 pb-1">
           <span class="text-slate-400">通關總時間：</span>
@@ -531,7 +516,6 @@
       });
       document.getElementById('summaryCard').innerHTML = detailsHtml;
 
-      // 本機榜單處理
       const isNewBest = saveSpeedRecord(secNum);
       handleRecordBanner(isNewBest);
       renderLeaderboard('SPEED');
@@ -540,7 +524,6 @@
       document.getElementById('resultModal').classList.remove('hidden');
     }
 
-    // 無盡模式陣亡結算
     function finishEndlessGame() {
       document.getElementById('resultIcon').innerText = "⏳";
       document.getElementById('resultMainTitle').innerText = "時間耗盡！";
@@ -571,7 +554,6 @@
       else banner.classList.add('hidden');
     }
 
-    // 儲存五關紀錄
     function saveSpeedRecord(sec) {
       let records = JSON.parse(localStorage.getItem('dungeon_speed_records') || '[]');
       let isBest = records.length === 0 || sec < records[0];
@@ -582,7 +564,6 @@
       return isBest;
     }
 
-    // 儲存無盡紀錄
     function saveEndlessRecord(kills) {
       let records = JSON.parse(localStorage.getItem('dungeon_endless_records') || '[]');
       let isBest = records.length === 0 || kills > records[0];
@@ -593,7 +574,6 @@
       return isBest;
     }
 
-    // 渲染本機榜單
     function renderLeaderboard(type) {
       const titleEl = document.getElementById('leaderboardTitle');
       const listEl = document.getElementById('leaderboardList');
@@ -622,14 +602,12 @@
       }
     }
 
-    // 再次挑戰當前模式
     function retryCurrentMode() {
       document.getElementById('resultModal').classList.add('hidden');
       if (currentMode === 'STAGES') startFiveStagesMode();
       else startEndlessMode();
     }
 
-    // 初始載入
     window.onload = updateLobbyPreview;
   </script>
 </body>
