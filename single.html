@@ -54,7 +54,7 @@
         </span>
         <span class="text-[10px] bg-rose-950/80 text-rose-300 border border-rose-700 px-2 py-0.5 rounded-full font-bold">極限狂暴</span>
       </div>
-      <p class="text-xs text-slate-300">初始 45 秒倒數！每斬殺一隻魔物延長 4 秒，挑戰最高連斬與刷怪總量！</p>
+      <p class="text-xs text-slate-300">初始 20 秒倒數！前 10 隻擊破僅補 1 秒，步步緊逼的極限斬擊！</p>
     </button>
 
     <!-- 本地英雄榜預覽 -->
@@ -88,10 +88,11 @@
       <div id="stageDot4" class="flex-1 py-1 rounded text-center bg-slate-800 text-slate-500">B5</div>
     </div>
 
-    <!-- 無盡模式：擊破數與連擊指示條 -->
+    <!-- 無盡模式：擊破數、連擊與即時加時指示條 -->
     <div id="endlessStatusBar" class="flex items-center justify-between bg-slate-800/80 px-3 py-1.5 rounded-xl border border-slate-700 text-xs hidden my-1 font-mono">
       <div>已擊破: <span id="endlessKillCount" class="text-amber-400 font-black text-sm">0</span> 隻</div>
-      <div>連擊: <span id="endlessComboCount" class="text-rose-400 font-black text-sm">0</span> Combo</div>
+      <div>連擊: <span id="endlessComboCount" class="text-rose-400 font-black text-sm">0</span></div>
+      <div class="text-emerald-400 font-bold text-[11px]" id="endlessBonusTag">+1.0s</div>
     </div>
 
     <!-- 魔物戰鬥中央卡片 -->
@@ -120,7 +121,7 @@
       <!-- 彈刀懲罰遮罩 -->
       <div id="stunOverlay" class="absolute inset-0 bg-slate-950/85 backdrop-blur-sm rounded-2xl flex flex-col items-center justify-center gap-1 hidden z-20">
         <div class="text-3xl animate-bounce">⚡</div>
-        <div class="text-sm font-black text-rose-400">彈刀懲罰！連擊歸零！</div>
+        <div class="text-sm font-black text-rose-400">彈刀懲罰！連擊中斷！</div>
         <div class="text-xs text-slate-300">無法整除，冷卻倒數: <span id="stunCount" class="font-bold text-amber-400">3</span> 秒</div>
       </div>
     </div>
@@ -163,7 +164,6 @@
 
       <!-- 戰績總結卡片 -->
       <div id="summaryCard" class="w-full bg-slate-900/90 rounded-2xl p-3 border border-slate-700 text-left text-xs font-mono mb-3 space-y-1.5 shadow-inner">
-        <!-- 動態依模式填入 -->
       </div>
 
       <!-- 本機排行榜 Top 3 -->
@@ -173,7 +173,6 @@
           <span class="text-[9px] text-slate-500">保存在本手機</span>
         </div>
         <div id="leaderboardList" class="space-y-1 font-mono text-slate-300">
-          <!-- 動態插入榜單 -->
         </div>
       </div>
 
@@ -194,7 +193,6 @@
   </footer>
 
   <script>
-    // 破除往返快取
     window.addEventListener('pageshow', function(event) {
       if (event.persisted) {
         window.location.reload();
@@ -203,48 +201,50 @@
 
     let currentMode = 'STAGES';
 
-    // 五關關卡固定設定
+    // 五關關卡固定配置 (明確因子抽樣數量，確保 100% 產出漂亮合數)
     const FIVE_STAGES = [
-      { floor: 'B1', name: 'B1 史萊姆', icon: '🟢', desc: '基礎暖身：2、3 的小倍數', pool: [2, 2, 3, 3], cuts: 2, maxLimit: 60 },
-      { floor: 'B2', name: 'B2 骷髏兵', icon: '💀', desc: '倍數混合：加入 5 的因數', pool: [2, 3, 5], cuts: 3, maxLimit: 150 },
-      { floor: 'B3', name: 'B3 哥布林精銳', icon: '👺', desc: '進階考驗：加入 7 的質因數', pool: [2, 3, 5, 7], cuts: 3, maxLimit: 450 },
-      { floor: 'B4', name: 'B4 石巨人領主', icon: '🗿', desc: '巨額血量：多重質因數混搭', pool: [2, 3, 5, 7], cuts: 4, maxLimit: 1000 },
-      { floor: 'B5', name: 'B5 深淵黑龍王', icon: '🐲', desc: '極限首領：必含 11 奇偶位差考驗', pool: [2, 3, 5, 7], cuts: 3, maxLimit: 1500, mustInclude: 11 }
+      { floor: 'B1', name: 'B1 史萊姆', icon: '🟢', desc: '基礎暖身：2、3 的小倍數', pool: [2, 2, 2, 3, 3], cuts: 2 },
+      { floor: 'B2', name: 'B2 骷髏兵', icon: '💀', desc: '倍數混合：加入 5 的因數', pool: [2, 3, 5], cuts: 3 },
+      { floor: 'B3', name: 'B3 哥布林精銳', icon: '👺', desc: '進階考驗：加入 7 的質因數', pool: [2, 3, 5, 7], cuts: 3 },
+      { floor: 'B4', name: 'B4 石巨人領主', icon: '🗿', desc: '巨額血量：多重質因數混搭', pool: [2, 3, 5, 7], cuts: 4 },
+      { floor: 'B5', name: 'B5 深淵黑龍王', icon: '🐲', desc: '極限首領：必含 11 奇偶位差考驗', pool: [2, 3, 5, 7], cuts: 3, mustInclude: 11 }
     ];
 
     let stageIndex = 0;
-    let currentHp = 1;
-    let currentInitHp = 1;
+    let currentHp = 24;
+    let currentInitHp = 24;
     let stageFactors = [];
     let stagesRecord = [];
 
+    // 無盡模式狀態
     let endlessKills = 0;
     let currentCombo = 0;
     let maxCombo = 0;
-    let endlessTimeRemaining = 45.0;
+    let endlessTimeRemaining = 20.0; // 緊湊的 20 秒初始倒數
 
     let timerInterval = null;
     let speedStartTime = null;
     let isTimerRunning = false;
     let isStunned = false;
 
-    // 安全生成魔物血量（保證不為 0，且血量合理）
-    function generateMonsterHp(pool, cuts, maxLimit, mustInclude = null) {
-      for (let attempt = 0; attempt < 50; attempt++) {
-        let factors = [];
-        if (mustInclude) {
-          factors.push(mustInclude);
-        }
-        for (let i = factors.length; i < cuts; i++) {
-          factors.push(pool[Math.floor(Math.random() * pool.length)]);
-        }
-        let total = factors.reduce((acc, v) => acc * v, 1);
-        if (total >= 12 && total <= maxLimit) {
-          return total;
-        }
+    // 安全、可靠的質因數相乘演算法
+    function generateHpByFactors(pool, count, mustInclude = null) {
+      let factors = [];
+      if (mustInclude) {
+        factors.push(mustInclude);
       }
-      // 保底數值避免極端狀況返回 0
-      return mustInclude ? mustInclude * 6 : 24;
+      while (factors.length < count) {
+        factors.push(pool[Math.floor(Math.random() * pool.length)]);
+      }
+      return factors.reduce((acc, v) => acc * v, 1);
+    }
+
+    // 依指定規則分配無盡加時：前 10 隻 1.0 秒，後續階段遞減
+    function getEndlessBonusTime(kills) {
+      if (kills < 10) return 1.0; // 前 10 隻各補 1 秒
+      if (kills < 20) return 0.7; // 11~20 隻各補 0.7 秒
+      if (kills < 30) return 0.4; // 21~30 隻各補 0.4 秒
+      return 0.2;                 // 31 隻以上極限生存每隻 0.2 秒
     }
 
     function formatPrimePower(factors) {
@@ -279,6 +279,7 @@
       updateLobbyPreview();
     }
 
+    // 啟動五關競速模式
     function startFiveStagesMode() {
       currentMode = 'STAGES';
       stageIndex = 0;
@@ -297,12 +298,12 @@
       document.getElementById('meterDisplay').innerText = "00.00";
       document.getElementById('meterUnit').innerText = "s";
 
-      loadFiveStage(stageIndex);
+      loadFiveStage(0);
     }
 
     function loadFiveStage(idx) {
       const stage = FIVE_STAGES[idx];
-      currentHp = generateMonsterHp(stage.pool, stage.cuts, stage.maxLimit, stage.mustInclude);
+      currentHp = generateHpByFactors(stage.pool, stage.cuts, stage.mustInclude);
       currentInitHp = currentHp;
       stageFactors = [];
       isStunned = false;
@@ -327,12 +328,13 @@
       updateUI();
     }
 
+    // 啟動無盡深淵模式
     function startEndlessMode() {
       currentMode = 'ENDLESS';
       endlessKills = 0;
       currentCombo = 0;
       maxCombo = 0;
-      endlessTimeRemaining = 45.0;
+      endlessTimeRemaining = 20.0;
       isTimerRunning = false;
       clearInterval(timerInterval);
 
@@ -349,6 +351,7 @@
 
       document.getElementById('endlessKillCount').innerText = "0";
       document.getElementById('endlessComboCount').innerText = "0";
+      document.getElementById('endlessBonusTag').innerText = `+${getEndlessBonusTime(0).toFixed(1)}s`;
 
       loadEndlessMonster();
     }
@@ -356,39 +359,45 @@
     function loadEndlessMonster() {
       let pool = [2, 2, 3, 3, 5];
       let cuts = 2;
-      let limit = 180;
       let mustInclude = null;
 
+      // 隨擊殺數階梯提升難度
       if (endlessKills >= 5) {
-        pool.push(7, 7);
+        pool.push(7);
         cuts = 3;
-        limit = 500;
       }
-      if (endlessKills >= 10) {
+      if (endlessKills >= 12) {
         pool.push(11);
         cuts = 4;
-        limit = 1500;
-        if (Math.random() > 0.5) mustInclude = 11;
+        if (Math.random() > 0.4) mustInclude = 11;
+      }
+      if (endlessKills >= 20) {
+        pool = [2, 3, 5, 7, 11];
+        cuts = 5;
       }
 
-      currentHp = generateMonsterHp(pool, cuts, limit, mustInclude);
+      currentHp = generateHpByFactors(pool, cuts, mustInclude);
       currentInitHp = currentHp;
       stageFactors = [];
       isStunned = false;
 
       const monsterTitles = ['深淵史萊姆', '狂暴哥布林', '煉獄骷髏', '暗黑石像鬼', '遠古魔龍'];
       const icons = ['👾', '👹', '💀', '🦇', '🐲'];
-      const chosen = Math.min(Math.floor(endlessKills / 4), 4);
+      const chosen = Math.min(Math.floor(endlessKills / 5), 4);
+      const bonus = getEndlessBonusTime(endlessKills);
 
       document.getElementById('monsterIcon').innerText = icons[chosen];
       document.getElementById('monsterName').innerText = `${monsterTitles[chosen]} Lv.${endlessKills + 1}`;
-      document.getElementById('monsterDesc').innerText = `擊破 +4 秒！目前連擊: ${currentCombo} Combo`;
+      document.getElementById('monsterDesc').innerText = `擊破 +${bonus.toFixed(1)}秒！當前連擊: ${currentCombo} Combo`;
+      document.getElementById('endlessBonusTag').innerText = `+${bonus.toFixed(1)}s`;
       updateUI();
     }
 
     function updateUI() {
-      document.getElementById('monsterHp').innerText = currentHp;
-      document.getElementById('factorsHistory').innerText = stageFactors.length > 0 ? stageFactors.join(' × ') : '無';
+      const hpEl = document.getElementById('monsterHp');
+      if (hpEl) hpEl.innerText = currentHp;
+      const historyEl = document.getElementById('factorsHistory');
+      if (historyEl) historyEl.innerText = stageFactors.length > 0 ? stageFactors.join(' × ') : '無';
     }
 
     function slash(prime) {
@@ -416,7 +425,7 @@
       }
 
       if (currentHp % prime === 0) {
-        currentHp /= prime;
+        currentHp = Math.round(currentHp / prime);
         stageFactors.push(prime);
         currentCombo++;
         if (currentCombo > maxCombo) maxCombo = currentCombo;
@@ -446,8 +455,10 @@
               finishStagesGame();
             }
           } else {
+            // 套用嚴格的加時遞減公式
+            const bonus = getEndlessBonusTime(endlessKills);
             endlessKills++;
-            endlessTimeRemaining += 4.0;
+            endlessTimeRemaining += bonus;
             document.getElementById('endlessKillCount').innerText = endlessKills;
             loadEndlessMonster();
           }
