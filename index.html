@@ -1,0 +1,111 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+  <meta http-equiv="Pragma" content="no-cache">
+  <meta http-equiv="Expires" content="0">
+  <title>地牢切怪 - 數學冒險大廳</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-slate-950 text-white min-h-screen flex flex-col items-center justify-between p-4 select-none touch-manipulation">
+
+  <!-- 頂部標題與遊戲 LOGO -->
+  <header class="w-full max-w-sm flex flex-col items-center text-center mt-3 mb-2">
+    <div class="relative">
+      <div class="text-5xl animate-bounce mb-1">⚔️</div>
+      <div class="absolute -top-1 -right-2 text-xs bg-amber-500 text-slate-950 px-1.5 py-0.5 rounded-full font-black tracking-wider uppercase">
+        v2.0
+      </div>
+    </div>
+    <h1 class="text-3xl font-black text-transparent bg-clip-text bg-gradient-to-r from-amber-400 via-rose-400 to-amber-300 tracking-wider">
+      地牢切怪大冒險
+    </h1>
+    <p class="text-xs text-slate-400 mt-1 font-medium">質因數 × 公因數 × 終極心算斬擊</p>
+  </header>
+
+  <!-- 三大傳送門按鈕區 -->
+  <main class="w-full max-w-sm flex-1 flex flex-col justify-center gap-3.5 my-auto">
+    
+    <!-- 模式 1: 單人試煉場 -->
+    <a href="./single.html" class="group relative block bg-slate-900/90 border-2 border-amber-500/50 hover:border-amber-400 p-4 rounded-2xl active:scale-95 transition-all shadow-lg hover:shadow-amber-500/10">
+      <div class="flex items-center justify-between mb-1.5">
+        <div class="flex items-center gap-2">
+          <span class="text-2xl group-hover:scale-110 transition-transform">🏰</span>
+          <span class="text-lg font-black text-amber-400">單人試煉領域</span>
+        </div>
+        <span class="text-[10px] bg-amber-500/20 text-amber-300 border border-amber-500/40 px-2 py-0.5 rounded-full font-bold">
+          單機練習
+        </span>
+      </div>
+      <p class="text-xs text-slate-300 pl-8 leading-relaxed">
+        五關階梯競速 ＋ 無盡深淵極限生存！挑戰 S 級段位與個人最高連擊紀錄。
+      </p>
+      <div class="mt-2 pl-8 flex items-center gap-2 text-[10px] text-amber-400/80 font-mono">
+        <span>▶ 支援離線遊玩</span>
+        <span>•</span>
+        <span>▶ 本機 Top 3 英雄榜</span>
+      </div>
+    </a>
+
+    <!-- 模式 2: 雙人質因數對決 -->
+    <a href="./pvp.html" class="group relative block bg-slate-900/90 border-2 border-indigo-500/50 hover:border-indigo-400 p-4 rounded-2xl active:scale-95 transition-all shadow-lg hover:shadow-indigo-500/10">
+      <div class="flex items-center justify-between mb-1.5">
+        <div class="flex items-center gap-2">
+          <span class="text-2xl group-hover:scale-110 transition-transform">🗡️</span>
+          <span class="text-lg font-black text-indigo-400">質因數雙人對決</span>
+        </div>
+        <span class="text-[10px] bg-indigo-500/20 text-indigo-300 border border-indigo-500/40 px-2 py-0.5 rounded-full font-bold">
+          4 碼連線
+        </span>
+      </div>
+      <p class="text-xs text-slate-300 pl-8 leading-relaxed">
+        即時同步削血競速！揮舞 2、3、5、7、11 神劍，最快將怪獸生命值削至 1 者獲勝。
+      </p>
+      <div class="mt-2 pl-8 flex items-center gap-2 text-[10px] text-indigo-400/80 font-mono">
+        <span>▶ PeerJS 零延遲</span>
+        <span>•</span>
+        <span>▶ 無縫雙向再戰</span>
+      </div>
+    </a>
+
+    <!-- 模式 3: 雙子公因數對決 -->
+    <a href="./gcd.html" class="group relative block bg-slate-900/90 border-2 border-emerald-500/50 hover:border-emerald-400 p-4 rounded-2xl active:scale-95 transition-all shadow-lg hover:shadow-emerald-500/10">
+      <div class="flex items-center justify-between mb-1.5">
+        <div class="flex items-center gap-2">
+          <span class="text-2xl group-hover:scale-110 transition-transform">🐉</span>
+          <span class="text-lg font-black text-emerald-400">雙子公因數對決</span>
+        </div>
+        <span class="text-[10px] bg-emerald-500/20 text-emerald-300 border border-emerald-500/40 px-2 py-0.5 rounded-full font-bold">
+          短除法對抗
+        </span>
+      </div>
+      <p class="text-xs text-slate-300 pl-8 leading-relaxed">
+        抽出共同質因數短除雙數！洞察互質時機發動斬殺，結算自動解析 GCD 與 LCM。
+      </p>
+      <div class="mt-2 pl-8 flex items-center gap-2 text-[10px] text-emerald-400/80 font-mono">
+        <span>▶ 包含神劍 11</span>
+        <span>•</span>
+        <span>▶ 互質終結技</span>
+      </div>
+    </a>
+
+  </main>
+
+  <!-- 底部版權與教學提點 -->
+  <footer class="w-full max-w-sm text-center py-2 text-[11px] text-slate-500 border-t border-slate-800/80 flex flex-col gap-1">
+    <div class="text-slate-400 font-medium">💡 小撇步：加入手機主畫面可獲得如 App 般的全螢幕沉浸體驗！</div>
+    <div>Math Dungeon Game Hub • Designed for Math Class</div>
+  </footer>
+
+  <script>
+    // 破除往返快取 (BFCache)
+    window.addEventListener('pageshow', function(event) {
+      if (event.persisted) {
+        window.location.reload();
+      }
+    });
+  </script>
+</body>
+</html>
