@@ -10,3 +10,4 @@
 - **作答懲罰**：無法整除時會彈刀並強制凍結操作 5 秒。
 - **單機模式**：提供暗影 AI 對手，學網防火牆阻擋或落單時可單人練習。
 - **結算動畫**：獲勝端滿版煙火，落敗端拳套重擊 KO，支援雙方同意再戰與休兵協議。
+<img width="396" height="396" alt="qr ioi tw" src="https://github.com/user-attachments/assets/a8a5883b-d443-4a13-a630-e2ef7cd4fcd4" />
